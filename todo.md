@@ -1,0 +1,43 @@
+# URL短縮サービス - プロジェクト TODO
+
+## Issue #6: プロジェクト初期化とデプロイ設定
+- [x] Next.js プロジェクトの初期化
+- [ ] Cloudflare Workers (Wrangler) の設定ファイル作成
+- [ ] Tailwind CSS v4 のスタイリング基盤整備
+- [ ] 基本的なルーティング構造の確立
+- [ ] 開発環境とプロダクション環境の設定分離
+
+## Issue #7: Vercel Postgres と Drizzle ORM のセットアップ
+- [ ] @vercel/postgres と drizzle-orm のインストール
+- [ ] urls テーブルのスキーマ定義 (id, long_url, short_code, created_at)
+- [ ] マイグレーションスクリプトの設定
+
+## Issue #8: Zod による URL バリデーションの実装
+- [ ] Zod スキーマの定義
+- [ ] URL形式チェック関数の作成
+- [ ] ユニットテストの追加
+
+## Issue #9: Sqids による短縮コード生成ロジックの実装
+- [ ] sqids ライブラリの導入
+- [ ] ID ↔ Code 変換ユーティリティの作成
+- [ ] ユニットテストの追加
+
+## Issue #10: URL登録 API の作成 (基本機能)
+- [ ] POST /api/shorten エンドポイントの作成
+- [ ] 同一URLの重複チェックロジック
+- [ ] DB保存と短縮コード発行の連携
+
+## Issue #11: Google Safe Browsing API による安全確認の実装
+- [ ] API クライアントの実装
+- [ ] 登録フローへの組み込み
+- [ ] 危険判定時のエラーレスポンス処理
+
+## Issue #12: 302 リダイレクト機能の実装
+- [ ] ダイナミックルーティング ([code]) の作成
+- [ ] DBからのURL検索ロジック
+- [ ] 302 Redirect の実行
+
+## Issue #13: URL短縮フォームの UI 実装
+- [ ] 入力フォームの作成
+- [ ] API 呼び出しと結果表示 (コピー機能など)
+- [ ] エラー表示のハンドリング
