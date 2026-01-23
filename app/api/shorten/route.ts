@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateUrl } from "@/lib/validations/url";
 import { encodeId } from "@/lib/utils/sqids";
+import { checkUrlSafety } from "@/lib/api/safe-browsing";
 import { db } from "@/db";
 import { urls } from "@/db/schema/urls";
 import { eq } from "drizzle-orm";
@@ -28,6 +29,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { shortCode: existing.shortCode },
         { status: 200 }
+      );
+    }
+
+    // 安全確認 (Issue #11)
+    const safetyResult = await checkUrlSafety(url);
+    if (!safetyResult.safe) {
+      return NextResponse.json(
+        { error: "このURLは安全ではない可能性があるため登録できません" },
+        { status: 403 }
       );
     }
 
