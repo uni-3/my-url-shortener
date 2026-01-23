@@ -8,24 +8,24 @@
 - [ ] 開発環境とプロダクション環境の設定分離
 
 ## Issue #7: Vercel Postgres と Drizzle ORM のセットアップ
-- [ ] @vercel/postgres と drizzle-orm のインストール
-- [ ] urls テーブルのスキーマ定義 (id, long_url, short_code, created_at)
-- [ ] マイグレーションスクリプトの設定
+- [x] @vercel/postgres と drizzle-orm のインストール
+- [x] urls テーブルのスキーマ定義 (id, long_url, short_code, created_at)
+- [x] マイグレーションスクリプトの設定
 
 ## Issue #8: Zod による URL バリデーションの実装
-- [ ] Zod スキーマの定義
-- [ ] URL形式チェック関数の作成
-- [ ] ユニットテストの追加
+- [x] Zod スキーマの定義
+- [x] URL形式チェック関数の作成
+- [x] ユニットテストの追加
 
 ## Issue #9: Sqids による短縮コード生成ロジックの実装
-- [ ] sqids ライブラリの導入
-- [ ] ID ↔ Code 変換ユーティリティの作成
-- [ ] ユニットテストの追加
+- [x] sqids ライブラリの導入
+- [x] ID ↔ Code 変換ユーティリティの作成
+- [x] ユニットテストの追加
 
 ## Issue #10: URL登録 API の作成 (基本機能)
-- [ ] POST /api/shorten エンドポイントの作成
-- [ ] 同一URLの重複チェックロジック
-- [ ] DB保存と短縮コード発行の連携
+- [x] POST /api/shorten エンドポイントの作成
+- [x] 同一URLの重複チェックロジック
+- [x] DB保存と短縮コード発行の連携
 
 ## Issue #11: Google Safe Browsing API による安全確認の実装
 - [ ] API クライアントの実装
