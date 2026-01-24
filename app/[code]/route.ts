@@ -10,13 +10,30 @@ export async function GET(
 ) {
   const { code } = await params;
 
+  // KV Binding
+  const KV = (process.env as any).URL_CACHE as KVNamespace;
+
   try {
+    // 1. キャッシュを確認
+    if (KV) {
+      const cachedUrl = await KV.get(code);
+      if (cachedUrl) {
+        return NextResponse.redirect(cachedUrl, 302);
+      }
+    }
+
+    // 2. キャッシュミスの場合、DBを確認
     const entry = await db.query.urls.findFirst({
       where: eq(urls.shortCode, code),
     });
 
     if (!entry) {
       notFound();
+    }
+
+    // 3. キャッシュを更新 (有効期限1日)
+    if (KV) {
+      await KV.put(code, entry.longUrl, { expirationTtl: 86400 });
     }
 
     return NextResponse.redirect(entry.longUrl, 302);

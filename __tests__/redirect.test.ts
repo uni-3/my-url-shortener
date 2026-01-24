@@ -19,8 +19,30 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("GET /[code]", () => {
+  const originalEnv = process.env;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env = { ...originalEnv };
+  });
+
+  it("should return cached response if KV hit occurs", async () => {
+    const mockKV = {
+      get: vi.fn().mockResolvedValue("https://cached-example.com/foo"),
+      put: vi.fn(),
+    };
+    process.env.URL_CACHE = mockKV as any;
+
+    const request = new NextRequest("http://localhost:3000/abcd12");
+    const params = Promise.resolve({ code: "abcd12" });
+
+    const response = await GET(request, { params });
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("location")).toBe("https://cached-example.com/foo");
+    expect(mockKV.get).toHaveBeenCalledWith("abcd12");
+    // DB shouldn't be called on cache hit
+    expect(db.query.urls.findFirst).not.toHaveBeenCalled();
   });
 
   it("should redirect to longUrl when shortCode exists", async () => {
@@ -40,6 +62,30 @@ describe("GET /[code]", () => {
 
     expect(response.status).toBe(302);
     expect(response.headers.get("location")).toBe("https://example.com/foo");
+  });
+
+  it("should populate cache on cache miss", async () => {
+    const mockKV = {
+      get: vi.fn().mockResolvedValue(null),
+      put: vi.fn().mockResolvedValue(undefined),
+    };
+    process.env.URL_CACHE = mockKV as any;
+
+    const mockEntry = {
+      id: 1,
+      longUrl: "https://example.com/foo",
+      shortCode: "abcd12",
+      createdAt: new Date(),
+    };
+    vi.mocked(db.query.urls.findFirst).mockResolvedValue(mockEntry as any);
+
+    const request = new NextRequest("http://localhost:3000/abcd12");
+    const params = Promise.resolve({ code: "abcd12" });
+
+    await GET(request, { params });
+
+    expect(mockKV.get).toHaveBeenCalledWith("abcd12");
+    expect(mockKV.put).toHaveBeenCalledWith("abcd12", "https://example.com/foo", { expirationTtl: 86400 });
   });
 
   it("should call notFound when shortCode does not exist", async () => {

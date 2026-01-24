@@ -1,5 +1,7 @@
-import { drizzle } from "drizzle-orm/vercel-postgres";
-import { sql } from "@vercel/postgres";
+import { drizzle } from "drizzle-orm/d1";
 import * as schema from "./schema/urls";
 
-export const db = drizzle(sql, { schema });
+// Cloudflare D1 binding
+const d1 = (process.env as any).DB as D1Database;
+
+export const db = drizzle(d1, { schema });

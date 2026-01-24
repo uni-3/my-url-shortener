@@ -26,14 +26,23 @@ LOG_LEVEL = "debug"
 ENVIRONMENT = "production"
 LOG_LEVEL = "info"
 
-# D1 Database binding (if needed in future)
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "url-shortener"
-# database_id = "your-database-id"
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "url-shortener-development"
+database_id = "your-development-database-id"
 
 # KV namespace binding (for caching)
 [[kv_namespaces]]
 binding = "URL_CACHE"
-id = "your-kv-namespace-id"
-preview_id = "your-preview-kv-namespace-id"
+id = "your-development-kv-namespace-id"
+
+[env.production]
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "url-shortener-production"
+database_id = "your-production-database-id"
+
+[[env.production.kv_namespaces]]
+binding = "URL_CACHE"
+id = "your-production-kv-namespace-id"

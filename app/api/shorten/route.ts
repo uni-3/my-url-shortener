@@ -19,20 +19,25 @@ export async function POST(request: NextRequest) {
     }
 
     const { url } = result.data;
+    const KV = (process.env as any).URL_CACHE as KVNamespace;
 
-    // 既存のURLをチェック (Issue #10)
+    // 既存のURLをチェック
     const existing = await db.query.urls.findFirst({
       where: eq(urls.longUrl, url),
     });
 
     if (existing) {
+      // キャッシュも更新しておく
+      if (KV) {
+        await KV.put(existing.shortCode, url, { expirationTtl: 86400 });
+      }
       return NextResponse.json(
         { shortCode: existing.shortCode },
         { status: 200 }
       );
     }
 
-    // 安全確認 (Issue #11)
+    // 安全確認
     const safetyResult = await checkUrlSafety(url);
     if (!safetyResult.safe) {
       return NextResponse.json(
@@ -41,7 +46,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 新しいURLを登録 (Issue #10)
+    // 新しいURLを登録
     const shortCode = await db.transaction(async (tx) => {
       // 一時的なコードで挿入してIDを取得
       const [inserted] = await tx
@@ -62,6 +67,11 @@ export async function POST(request: NextRequest) {
 
       return code;
     });
+
+    // キャッシュを書き込み
+    if (KV) {
+      await KV.put(shortCode, url, { expirationTtl: 86400 });
+    }
 
     return NextResponse.json(
       { shortCode, url },
