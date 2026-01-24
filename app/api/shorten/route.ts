@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateUrl } from "@/lib/validations/url";
 import { encodeId } from "@/lib/utils/sqids";
+import { normalizeUrl } from "@/lib/utils/url";
 import { checkUrlSafety } from "@/lib/api/safe-browsing";
 import { db } from "@/db";
 import { urls } from "@/db/schema/urls";
@@ -18,7 +19,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { url } = result.data;
+    const { url: originalUrl } = result.data;
+    const url = normalizeUrl(originalUrl);
     const KV = (process.env as any).URL_CACHE as KVNamespace;
 
     // 既存のURLをチェック
