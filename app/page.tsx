@@ -53,7 +53,7 @@ export default function Home() {
         <form onSubmit={handleShorten} className="space-y-6">
           <div className="space-y-2">
             <label htmlFor="url" className="block text-sm font-medium text-foreground/80">
-              長いURLを入力
+              短縮したいURLを入力
             </label>
             <input
               id="url"

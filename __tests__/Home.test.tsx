@@ -20,7 +20,7 @@ describe("Home Page", () => {
   it("renders correctly with title and input", () => {
     render(<Home />);
     expect(screen.getByText("URL短縮サービス")).toBeDefined();
-    expect(screen.getByLabelText("長いURLを入力")).toBeDefined();
+    expect(screen.getByLabelText("短縮したいURLを入力")).toBeDefined();
     expect(screen.getByText("短縮する")).toBeDefined();
   });
 
@@ -32,7 +32,7 @@ describe("Home Page", () => {
     });
 
     render(<Home />);
-    const input = screen.getByLabelText("長いURLを入力");
+    const input = screen.getByLabelText("短縮したいURLを入力");
     const form = input.closest('form')!;
 
     fireEvent.change(input, { target: { value: "https://example.com/success" } });
@@ -53,7 +53,7 @@ describe("Home Page", () => {
     });
 
     render(<Home />);
-    const input = screen.getByLabelText("長いURLを入力");
+    const input = screen.getByLabelText("短縮したいURLを入力");
     const form = input.closest('form')!;
 
     fireEvent.change(input, { target: { value: "https://example.com/error" } });
@@ -72,7 +72,7 @@ describe("Home Page", () => {
     });
 
     render(<Home />);
-    const input = screen.getByLabelText("長いURLを入力");
+    const input = screen.getByLabelText("短縮したいURLを入力");
     const form = input.closest('form')!;
 
     fireEvent.change(input, { target: { value: "https://example.com/copy" } });
