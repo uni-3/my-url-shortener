@@ -25,6 +25,7 @@
 - **キャッシュ**: Cloudflare KVによる低レイテンシなリダイレクト
 - **セキュリティ**: Google Safe Browsing APIによる危険サイトチェック
 - **バリデーション**: ZodによるURL形式チェックと重複登録防止
+- **モニタリング**: OpenTelemetryによる実行時トレースの可視化
 
 ## 🛠️ セットアップ
 
@@ -121,6 +122,13 @@ pnpm db:migrate:local
 # ユニットテストを実行
 pnpm test
 ```
+
+## 📊 モニタリング (OpenTelemetry)
+
+本プロジェクトは OpenTelemetry を導入しており、以下の挙動になります：
+
+- **開発環境**: トレース情報はコンソール（標準出力）に書き出されます。
+- **本番環境**: `@vercel/otel` のデフォルト設定に従い、Vercel Observability または環境変数（`OTEL_EXPORTER_OTLP_ENDPOINT` 等）で指定された先に送信されます。
 
 ## 🤝 貢献
 
