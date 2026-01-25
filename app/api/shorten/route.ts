@@ -33,14 +33,18 @@ export async function POST(request: NextRequest) {
     });
 
     if (existing) {
+      span.setAttribute("short_code", existing.shortCode);
+      span.setAttribute("is_existing", true);
       // キャッシュも更新しておく
       if (KV) {
         await KV.put(existing.shortCode, url, { expirationTtl: 86400 });
       }
-      return NextResponse.json(
+      const response = NextResponse.json(
         { shortCode: existing.shortCode },
         { status: 200 }
       );
+      span.setStatus({ code: SpanStatusCode.OK });
+      return response;
     }
 
     // 安全確認
@@ -79,6 +83,8 @@ export async function POST(request: NextRequest) {
       await KV.put(shortCode, url, { expirationTtl: 86400 });
     }
 
+    span.setAttribute("short_code", shortCode);
+    span.setAttribute("is_existing", false);
     const response = NextResponse.json(
       { shortCode, url },
       { status: 201 }

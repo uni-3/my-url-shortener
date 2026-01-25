@@ -23,8 +23,12 @@ export async function GET(
     if (KV) {
       const cachedUrl = await KV.get(code);
       if (cachedUrl) {
-        return NextResponse.redirect(cachedUrl, 302);
+        span.setAttribute("cache_hit", true);
+        const response = NextResponse.redirect(cachedUrl, 302);
+        span.setStatus({ code: SpanStatusCode.OK });
+        return response;
       }
+      span.setAttribute("cache_hit", false);
     }
 
     // 2. キャッシュミスの場合、DBを確認
