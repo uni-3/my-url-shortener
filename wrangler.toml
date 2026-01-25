@@ -3,6 +3,9 @@ main = "dist/index.js"
 compatibility_date = "2024-12-16"
 compatibility_flags = ["nodejs_compat"]
 
+[observability]
+enabled = true
+
 # Development environment
 [env.development]
 name = "my-url-shortener-dev"

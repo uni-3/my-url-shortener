@@ -128,7 +128,31 @@ pnpm test
 本プロジェクトは OpenTelemetry を導入しており、以下の挙動になります：
 
 - **開発環境**: トレース情報はコンソール（標準出力）に書き出されます。
-- **本番環境**: `@vercel/otel` のデフォルト設定に従い、Vercel Observability または環境変数（`OTEL_EXPORTER_OTLP_ENDPOINT` 等）で指定された先に送信されます。
+- **本番環境**: Cloudflare Workers Observability を利用してトレースをキャプチャします。
+
+### Logpush による R2 へのエクスポート設定
+
+Cloudflare Workers のトレース（workers_trace_events）を R2 に保存するための設定例です。
+
+#### Terraform を使用する場合
+`terraform/` ディレクトリ配下の定義を使用します。以下の変数が必要です：
+- `r2_access_key_id`
+- `r2_secret_access_key`
+
+#### CLI (curl) を使用する場合
+以下のコマンドを実行して Logpush ジョブを作成できます。
+
+```bash
+curl "https://api.cloudflare.com/client/v4/accounts/<ACCOUNT_ID>/logpush/jobs" \
+  --header "Authorization: Bearer <API_TOKEN>" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "name": "workers-trace-to-r2",
+    "dataset": "workers_trace_events",
+    "destination_conf": "r2://<BUCKET_NAME>/{DATE}?account-id=<ACCOUNT_ID>&access-key-id=<R2_ACCESS_KEY_ID>&secret-access-key=<R2_SECRET_ACCESS_KEY>",
+    "enabled": true
+  }'
+```
 
 ## 🤝 貢献
 
