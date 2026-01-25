@@ -16,6 +16,9 @@
     "dev:cf": "wrangler pages dev --compatibility-flag=nodejs_compat --d1=DB --kv=URL_CACHE -- pnpm next dev"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/sdk-trace-base": "^2.5.0",
+    "@vercel/otel": "^2.1.0",
     "drizzle-orm": "^0.45.1",
     "next": "^15.0.0",
     "react": "^19.0.0",

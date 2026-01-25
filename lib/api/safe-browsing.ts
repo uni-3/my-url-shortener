@@ -1,4 +1,9 @@
+import { trace, SpanStatusCode } from "@opentelemetry/api";
+
+const tracer = trace.getTracer("url-shortener");
+
 export async function checkUrlSafety(url: string): Promise<{ safe: boolean; threatType?: string }> {
+  return tracer.startActiveSpan("check-url-safety", async (span) => {
   const apiKey = process.env.GOOGLE_SAFE_BROWSING_API_KEY;
   if (!apiKey) {
     console.warn("GOOGLE_SAFE_BROWSING_API_KEY is not set. Skipping safety check.");
@@ -39,18 +44,26 @@ export async function checkUrlSafety(url: string): Promise<{ safe: boolean; thre
       return { safe: true };
     }
 
-    const data = await response.json();
+    const data = await response.json() as any;
 
     if (data.matches && data.matches.length > 0) {
+      span.setAttribute("safe", false);
+      span.setAttribute("threat_type", data.matches[0].threatType);
       return {
         safe: false,
         threatType: data.matches[0].threatType,
       };
     }
 
+    span.setAttribute("safe", true);
+    span.setStatus({ code: SpanStatusCode.OK });
     return { safe: true };
   } catch (error) {
+    span.recordException(error as Error);
     console.error("Google Safe Browsing API connection error:", error);
     return { safe: true };
+  } finally {
+    span.end();
   }
+  });
 }
