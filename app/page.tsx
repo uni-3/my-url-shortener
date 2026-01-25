@@ -23,11 +23,11 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
+        const data = await response.json() as any;
         throw new Error(data.error || "URLの短縮に失敗しました");
       }
 
-      const data = await response.json();
+      const data = await response.json() as any;
       setShortCode(data.shortCode);
     } catch (err) {
       setError(err instanceof Error ? err.message : "エラーが発生しました");

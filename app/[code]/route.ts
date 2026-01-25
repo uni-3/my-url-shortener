@@ -3,12 +3,17 @@ import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { urls } from "@/db/schema/urls";
 import { eq } from "drizzle-orm";
+import { trace, SpanStatusCode } from "@opentelemetry/api";
+
+const tracer = trace.getTracer("url-shortener");
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ code: string }> }
 ) {
+  return tracer.startActiveSpan("redirect-url", async (span) => {
   const { code } = await params;
+  span.setAttribute("short_code", code);
 
   // KV Binding
   const KV = (process.env as any).URL_CACHE as KVNamespace;
@@ -36,15 +41,26 @@ export async function GET(
       await KV.put(code, entry.longUrl, { expirationTtl: 86400 });
     }
 
-    return NextResponse.redirect(entry.longUrl, 302);
+    const response = NextResponse.redirect(entry.longUrl, 302);
+    span.setStatus({ code: SpanStatusCode.OK });
+    return response;
   } catch (error: any) {
     if (error.digest === "NEXT_NOT_FOUND") {
+      span.setStatus({ code: SpanStatusCode.OK });
       throw error;
     }
+    span.recordException(error as Error);
+    span.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
     console.error("Redirect error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }
     );
+  } finally {
+    span.end();
   }
+  });
 }

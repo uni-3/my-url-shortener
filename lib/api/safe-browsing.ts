@@ -39,7 +39,7 @@ export async function checkUrlSafety(url: string): Promise<{ safe: boolean; thre
       return { safe: true };
     }
 
-    const data = await response.json();
+    const data = await response.json() as any;
 
     if (data.matches && data.matches.length > 0) {
       return {
