@@ -8,7 +8,9 @@ export function register() {
       spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())],
     });
   } else {
-    // 本番環境ではデフォルトのエクスポーター（VercelやOTLP環境変数）を使用
+    // 本番環境ではCloudflare Workers Observability（Logpush/Destinations）を使用。
+    // registerOTelを呼び出すことでNext.jsの自動計測（fetch等）を有効にし、
+    // 生成されたスパンはCloudflareのランタイムによって自動的にキャプチャされます。
     registerOTel({ serviceName: "my-url-shortener" });
   }
 }
