@@ -4,7 +4,7 @@ import { setUserAttributes } from "@/lib/utils/telemetry";
 import { Span } from "@opentelemetry/api";
 
 describe("setUserAttributes", () => {
-  let mockSpan: any;
+  let mockSpan: { setAttribute: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     mockSpan = {
@@ -26,8 +26,8 @@ describe("setUserAttributes", () => {
     expect(mockSpan.setAttribute).toHaveBeenCalledWith("id", expect.any(String));
 
     // Verify the hash is consistent
-    const call = mockSpan.setAttribute.mock.calls.find((c: any) => c[0] === "id");
-    const hash = call[1];
+    const call = mockSpan.setAttribute.mock.calls.find((c) => c[0] === "id");
+    const hash = call ? call[1] : undefined;
     expect(hash).toHaveLength(64); // SHA-256 hex length
   });
 
@@ -55,14 +55,14 @@ describe("setUserAttributes", () => {
     const req1 = new NextRequest("https://example.com", { headers: { "cf-connecting-ip": "1.1.1.1" } });
     const req2 = new NextRequest("https://example.com", { headers: { "cf-connecting-ip": "2.2.2.2" } });
 
-    const span1 = { setAttribute: vi.fn() };
-    const span2 = { setAttribute: vi.fn() };
+    const span1 = { setAttribute: vi.fn() } as unknown as Span;
+    const span2 = { setAttribute: vi.fn() } as unknown as Span;
 
-    await setUserAttributes(span1 as any, req1);
-    await setUserAttributes(span2 as any, req2);
+    await setUserAttributes(span1, req1);
+    await setUserAttributes(span2, req2);
 
-    const hash1 = span1.setAttribute.mock.calls.find((c: any) => c[0] === "id")[1];
-    const hash2 = span2.setAttribute.mock.calls.find((c: any) => c[0] === "id")[1];
+    const hash1 = vi.mocked(span1.setAttribute).mock.calls.find((c) => c[0] === "id")?.[1];
+    const hash2 = vi.mocked(span2.setAttribute).mock.calls.find((c) => c[0] === "id")?.[1];
 
     expect(hash1).not.toBe(hash2);
   });
@@ -70,17 +70,17 @@ describe("setUserAttributes", () => {
   it("should produce different hashes for the same IP with different salts", async () => {
     const req = new NextRequest("https://example.com", { headers: { "cf-connecting-ip": "1.1.1.1" } });
 
-    const span1 = { setAttribute: vi.fn() };
-    const span2 = { setAttribute: vi.fn() };
+    const span1 = { setAttribute: vi.fn() } as unknown as Span;
+    const span2 = { setAttribute: vi.fn() } as unknown as Span;
 
     process.env.IP_SALT = "salt1";
-    await setUserAttributes(span1 as any, req);
+    await setUserAttributes(span1, req);
 
     process.env.IP_SALT = "salt2";
-    await setUserAttributes(span2 as any, req);
+    await setUserAttributes(span2, req);
 
-    const hash1 = span1.setAttribute.mock.calls.find((c: any) => c[0] === "id")[1];
-    const hash2 = span2.setAttribute.mock.calls.find((c: any) => c[0] === "id")[1];
+    const hash1 = vi.mocked(span1.setAttribute).mock.calls.find((c) => c[0] === "id")?.[1];
+    const hash2 = vi.mocked(span2.setAttribute).mock.calls.find((c) => c[0] === "id")?.[1];
 
     expect(hash1).not.toBe(hash2);
   });

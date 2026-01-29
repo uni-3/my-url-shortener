@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateUrl } from "@/lib/validations/url";
+import { validateUrl, type UrlInput } from "@/lib/validations/url";
 import { encodeId } from "@/lib/utils/sqids";
 import { normalizeUrl } from "@/lib/utils/url";
 import { generateRandomString } from "@/lib/utils/random";
@@ -9,6 +9,7 @@ import { urls } from "@/db/schema/urls";
 import { eq } from "drizzle-orm";
 import { trace, SpanStatusCode } from "@opentelemetry/api";
 import { setUserAttributes } from "@/lib/utils/telemetry";
+import { Env } from "@/lib/types/env";
 
 const tracer = trace.getTracer("url-shortener");
 
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
   return tracer.startActiveSpan("shorten-url", async (span) => {
     try {
       await setUserAttributes(span, request);
-      const body = (await request.json()) as any;
+      const body = (await request.json()) as UrlInput;
       const result = validateUrl(body.url);
 
       if (!result.success) {
@@ -28,7 +29,8 @@ export async function POST(request: NextRequest) {
 
       const { url: originalUrl } = result.data;
       const url = normalizeUrl(originalUrl);
-      const KV = (process.env as any).URL_CACHE as KVNamespace;
+      const env = process.env as unknown as Env;
+      const KV = env.URL_CACHE;
 
       // 既存のURLをチェック
       const existing = await db.query.urls.findFirst({

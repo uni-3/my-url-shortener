@@ -22,12 +22,18 @@ export default function Home() {
         body: JSON.stringify({ url: longUrl }),
       });
 
+      interface ShortenResponse {
+        shortCode: string;
+        url?: string;
+        error?: string;
+      }
+
+      const data = (await response.json()) as ShortenResponse;
+
       if (!response.ok) {
-        const data = await response.json() as any;
         throw new Error(data.error || "URLの短縮に失敗しました");
       }
 
-      const data = await response.json() as any;
       setShortCode(data.shortCode);
     } catch (err) {
       setError(err instanceof Error ? err.message : "エラーが発生しました");

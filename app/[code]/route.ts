@@ -5,6 +5,7 @@ import { urls } from "@/db/schema/urls";
 import { eq } from "drizzle-orm";
 import { trace, SpanStatusCode } from "@opentelemetry/api";
 import { setUserAttributes } from "@/lib/utils/telemetry";
+import { Env } from "@/lib/types/env";
 
 const tracer = trace.getTracer("url-shortener");
 
@@ -18,7 +19,8 @@ export async function GET(
     span.setAttribute("short_code", code);
 
     // KV Binding
-    const KV = (process.env as any).URL_CACHE as KVNamespace;
+    const env = process.env as unknown as Env;
+    const KV = env.URL_CACHE;
 
     try {
       // 1. キャッシュを確認

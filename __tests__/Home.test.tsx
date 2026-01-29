@@ -26,10 +26,10 @@ describe("Home Page", () => {
 
   it("handles successful URL shortening", async () => {
     const shortCode = "abcd123";
-    (global.fetch as any).mockResolvedValue({
+    vi.mocked(global.fetch).mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ shortCode }),
-    });
+    } as Response);
 
     render(<Home />);
     const input = screen.getByLabelText("短縮したいURLを入力");
@@ -47,10 +47,10 @@ describe("Home Page", () => {
 
   it("handles API errors", async () => {
     const errorMessage = "API Error Message";
-    (global.fetch as any).mockResolvedValue({
+    vi.mocked(global.fetch).mockResolvedValue({
       ok: false,
       json: () => Promise.resolve({ error: errorMessage }),
-    });
+    } as Response);
 
     render(<Home />);
     const input = screen.getByLabelText("短縮したいURLを入力");
@@ -66,10 +66,10 @@ describe("Home Page", () => {
 
   it("handles copy button click", async () => {
     const shortCode = "copy123";
-    (global.fetch as any).mockResolvedValue({
+    vi.mocked(global.fetch).mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ shortCode }),
-    });
+    } as Response);
 
     render(<Home />);
     const input = screen.getByLabelText("短縮したいURLを入力");
