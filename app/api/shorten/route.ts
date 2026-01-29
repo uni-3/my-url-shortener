@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateUrl } from "@/lib/validations/url";
 import { encodeId } from "@/lib/utils/sqids";
 import { normalizeUrl } from "@/lib/utils/url";
+import { generateRandomString } from "@/lib/utils/random";
 import { checkUrlSafety } from "@/lib/api/safe-browsing";
 import { db } from "@/db";
 import { urls } from "@/db/schema/urls";
@@ -65,9 +66,7 @@ export async function POST(request: NextRequest) {
           .insert(urls)
           .values({
             longUrl: url,
-            shortCode: `tmp-${Date.now()}-${Math.random()
-              .toString(36)
-              .slice(2, 9)}`,
+          shortCode: `tmp-${Date.now()}-${generateRandomString(12)}`,
           })
           .returning({ id: urls.id });
 
