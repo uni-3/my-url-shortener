@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { Span } from "@opentelemetry/api";
+import { createHash } from "node:crypto";
 
 /**
  * Sets user identification attributes on the provided OpenTelemetry span.
@@ -9,7 +10,7 @@ import { Span } from "@opentelemetry/api";
  * @param span - The OpenTelemetry span to set attributes on.
  * @param request - The incoming Next.js request.
  */
-export async function setUserAttributes(span: Span, request: NextRequest) {
+export function setUserAttributes(span: Span, request: NextRequest) {
   const ip =
     request.headers.get("cf-connecting-ip") ||
     request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
@@ -18,22 +19,11 @@ export async function setUserAttributes(span: Span, request: NextRequest) {
   const salt = process.env.IP_SALT || "default-salt";
 
   try {
-    const crypto = globalThis.crypto;
-    if (crypto && crypto.subtle) {
-      const msgUint8 = new TextEncoder().encode(ip + salt);
-      const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const hashHex = hashArray
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
+    const hashHex = createHash("sha256")
+      .update(ip + salt)
+      .digest("hex");
 
-      span.setAttribute("id", hashHex);
-    } else {
-      // In insecure contexts or older environments, crypto.subtle might be missing.
-      // We still set ip_address for geolocation.
-      console.warn("crypto.subtle is not available. Skipping IP hashing.");
-    }
-
+    span.setAttribute("id", hashHex);
     span.setAttribute("ip_address", ip);
   } catch (error) {
     console.error("Failed to hash IP address for telemetry:", error);

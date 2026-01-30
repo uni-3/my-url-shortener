@@ -16,7 +16,7 @@ const tracer = trace.getTracer("url-shortener");
 export async function POST(request: NextRequest) {
   return tracer.startActiveSpan("shorten-url", async (span) => {
     try {
-      await setUserAttributes(span, request);
+      setUserAttributes(span, request);
       const body = await request.json();
       const result = urlSchema.safeParse(body);
 

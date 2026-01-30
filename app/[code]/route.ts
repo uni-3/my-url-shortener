@@ -14,7 +14,7 @@ export async function GET(
   { params }: { params: Promise<{ code: string }> }
 ) {
   return tracer.startActiveSpan("redirect-url", async (span) => {
-    await setUserAttributes(span, request);
+    setUserAttributes(span, request);
     const { code } = await params;
     span.setAttribute("short_code", code);
 
