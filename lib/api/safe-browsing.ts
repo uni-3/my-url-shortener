@@ -44,7 +44,20 @@ export async function checkUrlSafety(url: string): Promise<{ safe: boolean; thre
       return { safe: true };
     }
 
-    const data = await response.json() as any;
+    interface SafeBrowsingMatch {
+      threatType: string;
+      platformType: string;
+      threatEntryType: string;
+      threat: {
+        url: string;
+      };
+    }
+
+    interface SafeBrowsingResponse {
+      matches?: SafeBrowsingMatch[];
+    }
+
+    const data = (await response.json()) as SafeBrowsingResponse;
 
     if (data.matches && data.matches.length > 0) {
       span.setAttribute("safe", false);

@@ -6,6 +6,16 @@ export const urlSchema = z.object({
 
 export type UrlInput = z.infer<typeof urlSchema>;
 
+/**
+ * Validates a URL string.
+ */
 export function validateUrl(url: string) {
   return urlSchema.safeParse({ url });
+}
+
+/**
+ * Validates the shorten request body.
+ */
+export function validateShortenRequest(body: { url?: string }) {
+  return urlSchema.safeParse(body);
 }

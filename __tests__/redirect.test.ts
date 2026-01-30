@@ -3,6 +3,7 @@ import { GET } from "@/app/[code]/route";
 import { db } from "@/db";
 import { NextRequest } from "next/server";
 import { notFound } from "next/navigation";
+import { Env } from "@/lib/types/env";
 
 vi.mock("@/db", () => ({
   db: {
@@ -30,8 +31,8 @@ describe("GET /[code]", () => {
     const mockKV = {
       get: vi.fn().mockResolvedValue("https://cached-example.com/foo"),
       put: vi.fn(),
-    };
-    process.env.URL_CACHE = mockKV as any;
+    } as unknown as KVNamespace;
+    (process.env as unknown as Env).URL_CACHE = mockKV;
 
     const request = new NextRequest("http://localhost:3000/abcd12");
     const params = Promise.resolve({ code: "abcd12" });
@@ -53,7 +54,7 @@ describe("GET /[code]", () => {
       createdAt: new Date(),
     };
 
-    vi.mocked(db.query.urls.findFirst).mockResolvedValue(mockEntry as any);
+    vi.mocked(db.query.urls.findFirst).mockResolvedValue(mockEntry);
 
     const request = new NextRequest("http://localhost:3000/abcd12");
     const params = Promise.resolve({ code: "abcd12" });
@@ -68,8 +69,8 @@ describe("GET /[code]", () => {
     const mockKV = {
       get: vi.fn().mockResolvedValue(null),
       put: vi.fn().mockResolvedValue(undefined),
-    };
-    process.env.URL_CACHE = mockKV as any;
+    } as unknown as KVNamespace;
+    (process.env as unknown as Env).URL_CACHE = mockKV;
 
     const mockEntry = {
       id: 1,
@@ -77,7 +78,7 @@ describe("GET /[code]", () => {
       shortCode: "abcd12",
       createdAt: new Date(),
     };
-    vi.mocked(db.query.urls.findFirst).mockResolvedValue(mockEntry as any);
+    vi.mocked(db.query.urls.findFirst).mockResolvedValue(mockEntry);
 
     const request = new NextRequest("http://localhost:3000/abcd12");
     const params = Promise.resolve({ code: "abcd12" });
@@ -89,10 +90,10 @@ describe("GET /[code]", () => {
   });
 
   it("should call notFound when shortCode does not exist", async () => {
-    vi.mocked(db.query.urls.findFirst).mockResolvedValue(undefined as any);
+    vi.mocked(db.query.urls.findFirst).mockResolvedValue(undefined);
 
-    const notFoundError = new Error("NEXT_NOT_FOUND");
-    (notFoundError as any).digest = "NEXT_NOT_FOUND";
+    const notFoundError = new Error("NEXT_NOT_FOUND") as Error & { digest: string };
+    notFoundError.digest = "NEXT_NOT_FOUND";
     vi.mocked(notFound).mockImplementation(() => {
       throw notFoundError;
     });
@@ -105,7 +106,7 @@ describe("GET /[code]", () => {
   });
 
   it("should return 500 when database query fails", async () => {
-    vi.mocked(db.query.urls.findFirst).mockRejectedValue(new Error("DB Error") as any);
+    vi.mocked(db.query.urls.findFirst).mockRejectedValue(new Error("DB Error"));
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     const request = new NextRequest("http://localhost:3000/error");
