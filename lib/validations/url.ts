@@ -6,6 +6,6 @@ export const urlSchema = z.object({
 
 export type UrlInput = z.infer<typeof urlSchema>;
 
-export function validateUrl(url: string) {
+export function validateUrl(url: unknown) {
   return urlSchema.safeParse({ url });
 }
