@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { urlSchema } from "@/lib/validations/url";
+import { validateShortenRequest } from "@/lib/validations/url";
 import { encodeId } from "@/lib/utils/sqids";
 import { normalizeUrl } from "@/lib/utils/url";
 import { generateRandomString } from "@/lib/utils/random";
@@ -17,8 +17,8 @@ export async function POST(request: NextRequest) {
   return tracer.startActiveSpan("shorten-url", async (span) => {
     try {
       setUserAttributes(span, request);
-      const body = await request.json();
-      const result = urlSchema.safeParse(body);
+      const body = (await request.json()) as { url?: string };
+      const result = validateShortenRequest(body);
 
       if (!result.success) {
         return NextResponse.json(
