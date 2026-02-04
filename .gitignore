@@ -105,3 +105,6 @@ temp/
 *.db
 *.sqlite
 *.sqlite3
+
+# Wrangler (local D1 data, logs, etc.)
+.wrangler/
