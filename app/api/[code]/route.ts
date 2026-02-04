@@ -15,7 +15,7 @@ export async function GET(
 ) {
   return tracer.startActiveSpan("api-redirect-url", async (span) => {
     try {
-      setUserAttributes(span, request);
+      await setUserAttributes(span, request);
       const { code } = await params;
 
       // コードをデコード
