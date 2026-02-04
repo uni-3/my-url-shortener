@@ -12,7 +12,9 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate && cp drizzle/*.sql migrations/",
     "db:push": "drizzle-kit push",
-    "db:migrate:local": "wrangler d1 migrations apply url-shortener-development --local"
+    "db:migrate:local": "wrangler d1 migrations apply url-shortener-development --local",
+    "db:migrate:production": "wrangler d1 migrations apply url-shortener-production --remote --env production",
+    "deploy": "next build && wrangler deploy --env production"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.16.2",

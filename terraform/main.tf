@@ -7,10 +7,10 @@ terraform {
   }
 
   backend "s3" {
-    bucket                      = "my-url-shortener-tfstate"
-    key                         = "terraform.tfstate"
-    region                      = "us-east-1"
-    force_path_style            = true # Required for R2
+    bucket                      = "tfstates"
+    key                         = "url-shortener/terraform.tfstate"
+    region                      = "apac"
+    use_path_style              = true # Required for R2
     skip_credentials_validation = true
     skip_metadata_api_check     = true
     skip_region_validation      = true

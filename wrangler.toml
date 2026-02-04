@@ -44,9 +44,9 @@ id = "your-development-kv-namespace-id"
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "url-shortener-production"
-database_id = "your-production-database-id"
+database_id = "e15fa00a-2e1f-4a2d-bcbe-3af3689b3394"
 migrations_dir = "migrations"
 
 [[env.production.kv_namespaces]]
 binding = "URL_CACHE"
-id = "your-production-kv-namespace-id"
+id = "458d4e3405de402c988c8575ef883eec"
