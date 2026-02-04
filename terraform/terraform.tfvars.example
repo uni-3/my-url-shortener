@@ -1,0 +1,3 @@
+cloudflare_api_token  = "あなたのCloudflare APIトークン"
+cloudflare_account_id = "あなたのアカウントID"
+environment           = "development"

@@ -5,6 +5,18 @@ terraform {
       version = "~> 4.0"
     }
   }
+
+  backend "s3" {
+    bucket                      = "my-url-shortener-tfstate"
+    key                         = "terraform.tfstate"
+    region                      = "us-east-1"
+    force_path_style            = true # Required for R2
+    skip_credentials_validation = true
+    skip_metadata_api_check     = true
+    skip_region_validation      = true
+    skip_requesting_account_id  = true
+    skip_s3_checksum            = true
+  }
 }
 
 provider "cloudflare" {
@@ -19,19 +31,6 @@ resource "cloudflare_d1_database" "url_shortener_db" {
 resource "cloudflare_workers_kv_namespace" "url_cache" {
   account_id = var.cloudflare_account_id
   title      = "url-cache-${var.environment}"
-}
-
-resource "cloudflare_r2_bucket" "trace_logs" {
-  account_id = var.cloudflare_account_id
-  name       = "url-shortener-traces-${var.environment}"
-}
-
-resource "cloudflare_logpush_job" "workers_trace_events" {
-  account_id       = var.cloudflare_account_id
-  dataset          = "workers_trace_events"
-  name             = "workers-trace-events"
-  destination_conf = "r2://${cloudflare_r2_bucket.trace_logs.name}/{DATE}?account-id=${var.cloudflare_account_id}&access-key-id=${var.r2_access_key_id}&secret-access-key=${var.r2_secret_access_key}"
-  enabled          = true
 }
 
 output "d1_database_id" {

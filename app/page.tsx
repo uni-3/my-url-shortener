@@ -7,12 +7,14 @@ export default function Home() {
   const [shortCode, setShortCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [threatType, setThreatType] = useState<string | undefined>(undefined);
   const [copied, setCopied] = useState(false);
 
   const handleShorten = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setThreatType(undefined);
     setShortCode("");
 
     try {
@@ -26,11 +28,13 @@ export default function Home() {
         shortCode: string;
         url?: string;
         error?: string;
+        threatType?: string;
       }
 
       const data = (await response.json()) as ShortenResponse;
 
       if (!response.ok) {
+        setThreatType(data.threatType);
         throw new Error(data.error || "URLの短縮に失敗しました");
       }
 
@@ -42,6 +46,33 @@ export default function Home() {
     }
   };
 
+  const getThreatInfo = (type?: string) => {
+    switch (type) {
+      case "MALWARE":
+        return {
+          label: "マルウェアの疑い",
+          link: "https://developers.google.com/search/docs/monitor-debug/security/malware?hl=ja",
+          linkText: "マルウェアについて詳しく知る",
+        };
+      case "SOCIAL_ENGINEERING":
+        return {
+          label: "フィッシング（詐欺広告）の疑い",
+          link: "https://www.antiphishing.org/",
+          linkText: "フィッシングについて詳しく知る",
+        };
+      case "UNWANTED_SOFTWARE":
+        return {
+          label: "好ましくないソフトウェアの疑い",
+          link: "https://www.google.com/about/unwanted-software-policy.html",
+          linkText: "Unwanted Software Policyについて詳しく知る",
+        };
+      default:
+        return null;
+    }
+  };
+
+  const threatInfo = getThreatInfo(threatType);
+
   const handleCopy = async () => {
     const fullUrl = `${window.location.origin}/${shortCode}`;
     await navigator.clipboard.writeText(fullUrl);
@@ -50,7 +81,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-secondary/20 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-secondary/20 flex flex-col items-center justify-center p-4">
       <div className="bg-background rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 p-8 w-full max-w-md border border-border">
         <h1 className="text-3xl font-bold text-foreground mb-6 text-center tracking-tight">
           URL短縮サービス
@@ -90,11 +121,40 @@ export default function Home() {
         </form>
 
         {error && (
-          <div className="mt-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm flex items-start gap-2">
-            <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>{error}</span>
+          <div className="mt-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm flex flex-col gap-2">
+            <div className="flex items-start gap-2">
+              <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>{error}</span>
+            </div>
+
+            {threatInfo && (
+              <div className="mt-2 text-xs border-t border-red-100 pt-2 space-y-2">
+                <p className="font-semibold text-red-700">{threatInfo.label}</p>
+                <a
+                  href={threatInfo.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline block"
+                >
+                  {threatInfo.linkText} →
+                </a>
+                <div className="text-[10px] text-muted-foreground mt-4 leading-relaxed">
+                  <a
+                    href="https://www.google.com/intl/ja/help/safebrowsing-advisory.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium hover:underline text-foreground"
+                  >
+                    Google が提供するアドバイス
+                  </a>
+                  <p className="mt-1">
+                    Google は、安全ではないウェブ リソースに関する最も正確で最新の情報を提供するよう努めています。ただし、Google はその情報が包括的であり、エラーがないことを保証することはできません。
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -107,17 +167,25 @@ export default function Home() {
               </code>
               <button
                 onClick={handleCopy}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                  copied
-                    ? "bg-green-500 text-white"
-                    : "bg-primary text-primary-foreground hover:opacity-90"
-                }`}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${copied
+                  ? "bg-green-500 text-white"
+                  : "bg-primary text-primary-foreground hover:opacity-90"
+                  }`}
               >
                 {copied ? "コピー完了！" : "コピー"}
               </button>
             </div>
           </div>
         )}
+      </div>
+
+      <div className="mt-8 max-w-md text-[10px] text-muted-foreground text-center space-y-1">
+        <p>
+          本サービスはウェブサイトの安全性を確認するために Google Safe Browsing API を使用しています。
+        </p>
+        <p>
+          Google は情報の正確性を保証しません。利用の際は自己責任でお願いいたします。
+        </p>
       </div>
     </main>
   );

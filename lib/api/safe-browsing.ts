@@ -10,7 +10,8 @@ export async function checkUrlSafety(url: string): Promise<{ safe: boolean; thre
     return { safe: true };
   }
 
-  const endpoint = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${apiKey}`;
+  // v5alpha1 (v5) endpoint
+  const endpoint = `https://safebrowsing.googleapis.com/v5alpha1/urls:search?key=${apiKey}`;
 
   try {
     const response = await fetch(endpoint, {
@@ -19,21 +20,7 @@ export async function checkUrlSafety(url: string): Promise<{ safe: boolean; thre
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        client: {
-          clientId: "my-url-shortener",
-          clientVersion: "1.0.0",
-        },
-        threatInfo: {
-          threatTypes: [
-            "MALWARE",
-            "SOCIAL_ENGINEERING",
-            "UNWANTED_SOFTWARE",
-            "POTENTIALLY_HARMFUL_APPLICATION",
-          ],
-          platformTypes: ["ANY_PLATFORM"],
-          threatEntryTypes: ["URL"],
-          threatEntries: [{ url }],
-        },
+        urls: [url],
       }),
     });
 
@@ -46,11 +33,7 @@ export async function checkUrlSafety(url: string): Promise<{ safe: boolean; thre
 
     interface SafeBrowsingMatch {
       threatType: string;
-      platformType: string;
-      threatEntryType: string;
-      threat: {
-        url: string;
-      };
+      url: string;
     }
 
     interface SafeBrowsingResponse {

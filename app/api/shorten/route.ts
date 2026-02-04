@@ -61,7 +61,10 @@ export async function POST(request: NextRequest) {
       const safetyResult = await checkUrlSafety(url);
       if (!safetyResult.safe) {
         return NextResponse.json(
-          { error: "このURLは安全ではない可能性があるため登録できません" },
+          {
+            error: "このURLは安全ではない可能性があるため登録できません",
+            threatType: safetyResult.threatType
+          },
           { status: 403 }
         );
       }
