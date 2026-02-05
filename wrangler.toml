@@ -1,7 +1,13 @@
 name = "my-url-shortener"
-main = "dist/index.js"
-compatibility_date = "2024-12-16"
-compatibility_flags = ["nodejs_compat"]
+main = ".open-next/worker.js"
+compatibility_date = "2026-02-03" # Updated to match OpenNext
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+preview_urls = true
+
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
 
 [observability]
 enabled = true
@@ -10,15 +16,29 @@ enabled = true
 [env.development]
 name = "my-url-shortener-dev"
 routes = [
-  { pattern = "dev.example.com/*", zone_name = "example.com" }
+  { pattern = "dev-m.uni-3.app", custom_domain = true }
 ]
+
+[[env.development.services]]
+binding = "WORKER_SELF_REFERENCE"
+service = "my-url-shortener-dev"
+
+[env.development.images]
+binding = "IMAGES"
 
 # Production environment
 [env.production]
 name = "my-url-shortener"
 routes = [
-  { pattern = "shorten.example.com/*", zone_name = "example.com" }
+  { pattern = "m.uni-3.app", custom_domain = true }
 ]
+
+[[env.production.services]]
+binding = "WORKER_SELF_REFERENCE"
+service = "my-url-shortener"
+
+[env.production.images]
+binding = "IMAGES"
 
 # Environment variables
 [env.development.vars]
@@ -44,9 +64,9 @@ id = "your-development-kv-namespace-id"
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "url-shortener-production"
-database_id = "your-production-database-id"
+database_id = "e15fa00a-2e1f-4a2d-bcbe-3af3689b3394"
 migrations_dir = "migrations"
 
 [[env.production.kv_namespaces]]
 binding = "URL_CACHE"
-id = "your-production-kv-namespace-id"
+id = "458d4e3405de402c988c8575ef883eec"

@@ -17,7 +17,10 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "preserve",
-    "types": ["vitest/globals", "@cloudflare/workers-types"],
+    "types": [
+      "vitest/globals",
+      "@cloudflare/workers-types"
+    ],
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
@@ -38,6 +41,8 @@
   },
   "include": [
     "next-env.d.ts",
+    "env.d.ts",
+    "worker-configuration.d.ts",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts"

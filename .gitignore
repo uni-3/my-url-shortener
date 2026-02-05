@@ -86,6 +86,7 @@ jspm_packages/
 
 # Next.js build output
 .next
+.open-next
 
 # Nuxt.js build / generate output
 .nuxt
@@ -105,3 +106,16 @@ temp/
 *.db
 *.sqlite
 *.sqlite3
+
+# Wrangler (local D1 data, logs, etc.)
+.wrangler/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+*.tfvars
+*.tfvars.json
+*.hcl
+!*.hcl.example

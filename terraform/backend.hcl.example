@@ -1,0 +1,3 @@
+access_key = "あなたのR2アクセスキーID"
+secret_key = "あなたのR2シークレットアクセスキー"
+endpoint   = "https://<あなたのアカウントID>.r2.cloudflarestorage.com"
