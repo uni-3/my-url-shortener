@@ -1,10 +1,10 @@
-import type { NextConfig } from "next";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
 // Initialize OpenNext Cloudflare for local development
 initOpenNextCloudflareForDev();
 
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   reactStrictMode: true,
   typescript: {
     tsconfigPath: "./tsconfig.json",

@@ -1,7 +1,19 @@
 name = "my-url-shortener"
-main = "dist/index.js"
-compatibility_date = "2024-12-16"
-compatibility_flags = ["nodejs_compat"]
+main = ".open-next/worker.js"
+compatibility_date = "2026-02-03" # Updated to match OpenNext
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+[[services]]
+binding = "WORKER_SELF_REFERENCE"
+service = "my-url-shortener"
+
+
+[images]
+binding = "IMAGES"
 
 [observability]
 enabled = true
@@ -10,14 +22,14 @@ enabled = true
 [env.development]
 name = "my-url-shortener-dev"
 routes = [
-  { pattern = "dev.example.com/*", zone_name = "example.com" }
+  { pattern = "dev-m.uni-3.app/*", zone_name = "uni-3.app" }
 ]
 
 # Production environment
 [env.production]
 name = "my-url-shortener"
 routes = [
-  { pattern = "shorten.example.com/*", zone_name = "example.com" }
+  { pattern = "m.uni-3.app/*", zone_name = "uni-3.app" }
 ]
 
 # Environment variables

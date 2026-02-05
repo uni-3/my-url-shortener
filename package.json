@@ -14,7 +14,8 @@
     "db:push": "drizzle-kit push",
     "db:migrate:local": "wrangler d1 migrations apply url-shortener-development --local",
     "db:migrate:production": "wrangler d1 migrations apply url-shortener-production --remote --env production",
-    "deploy": "next build && wrangler deploy --env production"
+    "deploy-next": "next build && wrangler deploy --env production",
+    "deploy": "opennextjs-cloudflare build && wrangler deploy --env production"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.16.2",
@@ -22,14 +23,14 @@
     "@opentelemetry/sdk-trace-base": "^2.5.0",
     "@vercel/otel": "^2.1.0",
     "drizzle-orm": "^0.45.1",
-    "next": "^15.0.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "next": "^15.5.12",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "sqids": "^0.3.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260124.0",
+    "@cloudflare/workers-types": "^4.20260203.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -46,6 +47,6 @@
     "tailwindcss": "^4.1.14",
     "typescript": "^5.3.3",
     "vitest": "^4.0.18",
-    "wrangler": "^4.60.0"
+    "wrangler": "^4.62.0"
   }
 }
