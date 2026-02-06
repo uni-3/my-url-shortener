@@ -15,3 +15,6 @@ if (typeof globalThis.crypto === "undefined") {
     globalThis.crypto.randomUUID = webcrypto.randomUUID;
   }
 }
+
+// Mock environment variables for testing
+process.env.IP_SALT = "test-salt";
