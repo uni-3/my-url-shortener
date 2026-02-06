@@ -1,5 +1,6 @@
 import { registerOTel } from "@vercel/otel";
 import { ConsoleSpanExporter, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 
 export function register() {
   if (process.env.NODE_ENV === "development") {
@@ -8,9 +9,17 @@ export function register() {
       spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())],
     });
   } else {
-    // 本番環境ではCloudflare Workers Observability（Logpush/Destinations）を使用。
-    // registerOTelを呼び出すことでNext.jsの自動計測（fetch等）を有効にし、
-    // 生成されたスパンはCloudflareのランタイムによって自動的にキャプチャされます。
-    registerOTel({ serviceName: "my-url-shortener" });
+    // 本番環境では Grafana Cloud へ直接 OTLP 送信
+    const exporter = new OTLPTraceExporter({
+      url: process.env.GRAFANA_OTLP_ENDPOINT || "https://otlp-gateway-prod-us-central-0.grafana.net/otlp/v1/traces",
+      headers: {
+        Authorization: `Basic ${process.env.GRAFANA_AUTH_TOKEN}`,
+      },
+    });
+
+    registerOTel({
+      serviceName: "my-url-shortener",
+      spanProcessors: [new SimpleSpanProcessor(exporter)],
+    });
   }
 }

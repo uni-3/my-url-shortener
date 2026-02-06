@@ -48,6 +48,8 @@ LOG_LEVEL = "debug"
 [env.production.vars]
 ENVIRONMENT = "production"
 LOG_LEVEL = "info"
+GRAFANA_OTLP_ENDPOINT = "https://otlp-gateway-prod-ap-northeast-0.grafana.net/otlp/v1/traces"
+# GRAFANA_AUTH_TOKEN は 'wrangler secret put GRAFANA_AUTH_TOKEN' で設定してください
 
 # D1 Database binding
 [[d1_databases]]
