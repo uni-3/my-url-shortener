@@ -16,7 +16,7 @@ enabled = true
 [env.development]
 name = "my-url-shortener-dev"
 routes = [
-  { pattern = "dev-m.uni-3.app", custom_domain = true }
+  { pattern = "dev-s.uni-3.app", custom_domain = true }
 ]
 
 [[env.development.services]]
@@ -30,7 +30,7 @@ binding = "IMAGES"
 [env.production]
 name = "my-url-shortener"
 routes = [
-  { pattern = "m.uni-3.app", custom_domain = true }
+  { pattern = "s.uni-3.app", custom_domain = true }
 ]
 
 [[env.production.services]]
