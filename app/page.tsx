@@ -32,8 +32,19 @@ export default function Home() {
       shortCode,
       longUrl,
     };
+    // skip for same shortCode
+    if (history.some((item) => item.shortCode === shortCode)) {
+      return;
+    }
+
     const newHistory = [newItem, ...history].slice(0, MAX_HISTORY);
-    saveHistory(newHistory);
+    const uniqueHistory = newHistory.filter((item, index, self) =>
+      index === self.findIndex((t) => (
+        t.shortCode === item.shortCode
+      ))
+    );
+
+    saveHistory(uniqueHistory);
   };
 
   const handleRemoveHistory = (index: number) => {
