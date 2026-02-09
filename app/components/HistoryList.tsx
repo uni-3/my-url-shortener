@@ -5,7 +5,6 @@ import { useState } from "react";
 export interface UrlHistoryItem {
     shortCode: string;
     longUrl: string;
-    createdAt: string;
 }
 
 interface HistoryListProps {
@@ -39,7 +38,7 @@ export default function HistoryList({ history, onRemove, onRemoveAll }: HistoryL
             <ul className="space-y-3 max-h-80 overflow-y-auto">
                 {history.map((item, index) => (
                     <li
-                        key={`${item.shortCode}-${item.createdAt}`}
+                        key={`${item.shortCode}`}
                         className="p-3 bg-accent/5 rounded-lg border border-border"
                     >
                         <div className="flex justify-between items-start gap-2">
@@ -51,9 +50,6 @@ export default function HistoryList({ history, onRemove, onRemoveAll }: HistoryL
                                 </code>
                                 <p className="text-xs text-muted-foreground truncate mt-1">
                                     {item.longUrl}
-                                </p>
-                                <p className="text-[10px] text-muted-foreground/60 mt-1">
-                                    {new Date(item.createdAt).toLocaleString("ja-JP")}
                                 </p>
                             </div>
                             <div className="flex gap-1 shrink-0">

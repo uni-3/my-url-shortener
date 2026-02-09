@@ -31,7 +31,6 @@ export default function Home() {
     const newItem: UrlHistoryItem = {
       shortCode,
       longUrl,
-      createdAt: new Date().toISOString(),
     };
     const newHistory = [newItem, ...history].slice(0, MAX_HISTORY);
     saveHistory(newHistory);
