@@ -34,6 +34,11 @@ describe('normalizeUrl', () => {
     expect(normalizeUrl('HTTPS://EXAMPLE.COM/')).toBe('https://example.com/');
   });
 
+  it('should add a trailing slash to subpaths', () => {
+    expect(normalizeUrl('https://example.com/foo')).toBe('https://example.com/foo/');
+    expect(normalizeUrl('https://example.com/foo/bar')).toBe('https://example.com/foo/bar/');
+  });
+
   it('should return the original string if URL is invalid', () => {
     expect(normalizeUrl('not-a-url')).toBe('not-a-url');
   });
