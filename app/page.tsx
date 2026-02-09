@@ -31,10 +31,20 @@ export default function Home() {
     const newItem: UrlHistoryItem = {
       shortCode,
       longUrl,
-      createdAt: new Date().toISOString(),
     };
+    // skip for same shortCode
+    if (history.some((item) => item.shortCode === shortCode)) {
+      return;
+    }
+
     const newHistory = [newItem, ...history].slice(0, MAX_HISTORY);
-    saveHistory(newHistory);
+    const uniqueHistory = newHistory.filter((item, index, self) =>
+      index === self.findIndex((t) => (
+        t.shortCode === item.shortCode
+      ))
+    );
+
+    saveHistory(uniqueHistory);
   };
 
   const handleRemoveHistory = (index: number) => {
