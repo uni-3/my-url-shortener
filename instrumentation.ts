@@ -11,7 +11,7 @@ export function register() {
   } else {
     // 本番環境では Grafana Cloud へ直接 OTLP 送信
     const exporter = new OTLPTraceExporter({
-      url: process.env.GRAFANA_OTLP_ENDPOINT || "https://otlp-gateway-prod-us-central-0.grafana.net/otlp/v1/traces",
+      url: process.env.GRAFANA_OTLP_ENDPOINT || "https://otlp-gateway-prod-ap-northeast-0.grafana.net/otlp/v1/traces",
       headers: {
         Authorization: `Basic ${process.env.GRAFANA_AUTH_TOKEN}`,
       },
