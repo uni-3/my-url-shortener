@@ -63,9 +63,6 @@ export default function Home() {
         <p>
           本サービスはウェブサイトの安全性を確認するために Google Safe Browsing API を使用しています。
         </p>
-        <p>
-          Google は情報の正確性を保証しません。利用の際は自己責任でお願いいたします。
-        </p>
       </div>
     </main>
   );
