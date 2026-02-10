@@ -32,19 +32,11 @@ export default function Home() {
       shortCode,
       longUrl,
     };
-    // skip for same shortCode
-    if (history.some((item) => item.shortCode === shortCode)) {
-      return;
-    }
 
-    const newHistory = [newItem, ...history].slice(0, MAX_HISTORY);
-    const uniqueHistory = newHistory.filter((item, index, self) =>
-      index === self.findIndex((t) => (
-        t.shortCode === item.shortCode
-      ))
-    );
-
-    saveHistory(uniqueHistory);
+    // 重複削除
+    const filteredHistory = history.filter(item => item.shortCode !== shortCode);
+    const newHistory = [newItem, ...filteredHistory].slice(0, MAX_HISTORY);
+    saveHistory(newHistory);
   };
 
   const handleRemoveHistory = (index: number) => {
