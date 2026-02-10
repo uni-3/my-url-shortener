@@ -13,6 +13,7 @@
     "db:generate": "drizzle-kit generate && cp drizzle/*.sql migrations/",
     "db:push": "drizzle-kit push",
     "db:migrate:local": "wrangler d1 migrations apply url-shortener-development --local",
+    "db:conn:local": "sqlite3 $(ls .wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite | head -n 1)",
     "db:migrate:production": "wrangler d1 migrations apply url-shortener-production --remote --env production",
     "deploy-next": "next build && wrangler deploy --env production",
     "deploy": "opennextjs-cloudflare build && wrangler deploy --env production"
@@ -42,6 +43,7 @@
     "@types/react-dom": "^18.2.18",
     "@vitejs/plugin-react": "^5.1.2",
     "autoprefixer": "^10.4.16",
+    "better-sqlite3": "^12.6.2",
     "drizzle-kit": "^0.31.8",
     "eslint": "^8.56.0",
     "eslint-config-next": "^15.0.0",
