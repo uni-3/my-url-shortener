@@ -3,12 +3,16 @@ import { ConsoleSpanExporter, SimpleSpanProcessor } from "@opentelemetry/sdk-tra
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 
 export function register() {
-  if (process.env.NODE_ENV === "development") {
+  const isDev = process.env.ENVIRONMENT === "development" || process.env.NODE_ENV === "development";
+
+  if (isDev) {
+    console.log("Initializing OpenTelemetry with ConsoleSpanExporter (Development Mode)");
     registerOTel({
       serviceName: "my-url-shortener",
       spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())],
     });
   } else {
+    console.log("Initializing OpenTelemetry with OTLPTraceExporter for Grafana (Production Mode)");
     const exporter = new OTLPTraceExporter({
       url: process.env.GRAFANA_OTLP_ENDPOINT || "https://otlp-gateway-prod-ap-northeast-0.grafana.net/otlp/v1/traces",
       headers: {
