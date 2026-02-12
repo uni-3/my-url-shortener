@@ -56,8 +56,8 @@ Cloudflare D1とKVをローカルでシミュレートするために以下の�
 # ローカルD1データベースにマイグレーションを適用
 pnpm db:migrate:local
 
-# 開発サーバーを起動（CloudflareのBindingを有効化）
-pnpm dev:cf
+# 開発サーバーを起動
+pnpm dev
 ```
 
 ブラウザで `http://localhost:3000` にアクセスしてください。
