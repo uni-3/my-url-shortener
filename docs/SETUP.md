@@ -62,7 +62,7 @@ https://developers.google.com/safe-browsing/reference?hl=ja
 |---|---|---|---|
 | `IP_SALT` | IPアドレスのハッシュ化用ソルト | はい | プライバシー保護のため。任意のランダム文字列。 |
 | `GOOGLE_SAFE_BROWSING_API_KEY` | Google Safe Browsing API キー | いいえ | 指定しない場合、安全確認をスキップします。 |
-| `GRAFANA_AUTH_TOKEN` | Grafana Cloud 認証トークン | いいえ | `Base64(UserID:APIKey)` 形式。 |
+| `GRAFANA_AUTH_TOKEN` | Grafana Cloud 認証トークン | はい | `Base64(UserID:APIKey)` 形式。 |
 | `GRAFANA_OTLP_ENDPOINT` | Grafana OTLP エンドポイント | いいえ | トレース送信先 URL。 |
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare アカウント ID | はい | デプロイや D1 操作に使用。 |
 | `CLOUDFLARE_DATABASE_ID` | Cloudflare D1 データベース ID | はい | デプロイや D1 操作に使用。 |
