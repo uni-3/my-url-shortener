@@ -101,7 +101,9 @@ npx wrangler secret put CLOUDFLARE_D1_TOKEN --env production
 IP_SALT=development-salt
 GOOGLE_SAFE_BROWSING_API_KEY=your-api-key
 ```
-
+CLOUDFLARE_ACCOUNT_ID=your-account-id
+CLOUDFLARE_DATABASE_ID=your-database-id
+CLOUDFLARE_D1_TOKEN=your-d1-token
 ##### 2. `wrangler dev` を使用する場合
 `.dev.vars` ファイルをプロジェクトルートに作成します：
 
