@@ -81,7 +81,14 @@ npx wrangler secret put GOOGLE_SAFE_BROWSING_API_KEY --env production
 
 # Grafana 認証トークンの設定
 npx wrangler secret put GRAFANA_AUTH_TOKEN --env production
-```
+# Cloudflare アカウント ID の設定
+npx wrangler secret put CLOUDFLARE_ACCOUNT_ID --env production
+
+# Cloudflare D1 データベース ID の設定
+npx wrangler secret put CLOUDFLARE_DATABASE_ID --env production
+
+# Cloudflare D1 トークンの設定
+npx wrangler secret put CLOUDFLARE_D1_TOKEN --env production
 
 #### ローカル開発環境の設定
 
