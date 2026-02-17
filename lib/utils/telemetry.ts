@@ -29,7 +29,11 @@ export async function setUserAttributes(span: Span, request: NextRequest) {
 
   const salt = process.env.IP_SALT;
   if (!salt) {
-    throw new Error("IP_SALT environment variable is required but not set");
+    // Only throw in production to prevent crashes during build or tests
+    if (process.env.ENVIRONMENT === "production" || process.env.NODE_ENV === "production") {
+      throw new Error("IP_SALT environment variable is required but not set");
+    }
+    return;
   }
 
   try {
