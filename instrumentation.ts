@@ -1,5 +1,5 @@
 import { registerOTel } from "@vercel/otel";
-import { ConsoleSpanExporter, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
+import { ConsoleSpanExporter, SimpleSpanProcessor, BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 
 export function register() {
@@ -12,6 +12,10 @@ export function register() {
       spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())],
     });
   } else {
+    if (!process.env.GRAFANA_AUTH_TOKEN) {
+      console.warn("GRAFANA_AUTH_TOKEN is not set. OpenTelemetry traces will not be sent to Grafana.");
+    }
+
     console.log("Initializing OpenTelemetry with OTLPTraceExporter for Grafana (Production Mode)");
     const exporter = new OTLPTraceExporter({
       url: process.env.GRAFANA_OTLP_ENDPOINT || "https://otlp-gateway-prod-ap-northeast-0.grafana.net/otlp/v1/traces",
@@ -22,7 +26,7 @@ export function register() {
 
     registerOTel({
       serviceName: "my-url-shortener",
-      spanProcessors: [new SimpleSpanProcessor(exporter)],
+      spanProcessors: [new BatchSpanProcessor(exporter)],
     });
   }
 }

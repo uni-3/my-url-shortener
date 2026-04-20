@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
       const result = validateShortenRequest(body);
 
       if (!result.success) {
+        span.setStatus({ code: SpanStatusCode.ERROR, message: result.error.errors[0].message });
         return NextResponse.json(
           { error: result.error.errors[0].message },
           { status: 400 }
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
       // 安全確認
       const safetyResult = await checkUrlSafety(url);
       if (!safetyResult.safe) {
+        span.setStatus({ code: SpanStatusCode.ERROR, message: `Unsafe URL: ${safetyResult.threatType}` });
         return NextResponse.json(
           {
             error: "このURLは安全ではない可能性があるため登録できません",
