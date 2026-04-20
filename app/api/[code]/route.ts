@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import Sqids from "sqids";
 import { trace, SpanStatusCode } from "@opentelemetry/api";
 import { setUserAttributes } from "@/lib/utils/telemetry";
+import { scheduleOtelFlush } from "@/lib/utils/otel-flush";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 const sqids = new Sqids();
 const tracer = trace.getTracer("url-shortener");
@@ -13,6 +15,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ code: string }> }
 ) {
+  const { ctx } = (await getCloudflareContext()) as unknown as { ctx: { waitUntil: (p: Promise<unknown>) => void } };
+
   return tracer.startActiveSpan("api-redirect-url", async (span) => {
     try {
       await setUserAttributes(span, request);
@@ -52,6 +56,7 @@ export async function GET(
       );
     } finally {
       span.end();
+      scheduleOtelFlush(ctx);
     }
   });
 }
