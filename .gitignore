@@ -119,3 +119,5 @@ temp/
 *.tfvars.json
 *.hcl
 !*.hcl.example
+
+.worktrees/
