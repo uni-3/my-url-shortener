@@ -7,6 +7,7 @@ declare namespace Cloudflare {
 		LOG_LEVEL: "debug";
 		GOOGLE_SAFE_BROWSING_API_KEY: string;
 		IP_SALT: string;
+		TURNSTILE_SECRET_KEY: string;
 		CLOUDFLARE_ACCOUNT_ID: string;
 		CLOUDFLARE_DATABASE_ID: string;
 		CLOUDFLARE_D1_TOKEN: string;
@@ -18,6 +19,7 @@ declare namespace Cloudflare {
 		LOG_LEVEL: "info";
 		GOOGLE_SAFE_BROWSING_API_KEY: string;
 		IP_SALT: string;
+		TURNSTILE_SECRET_KEY: string;
 		CLOUDFLARE_ACCOUNT_ID: string;
 		CLOUDFLARE_DATABASE_ID: string;
 		CLOUDFLARE_D1_TOKEN: string;
@@ -25,6 +27,7 @@ declare namespace Cloudflare {
 	interface Env {
 		GOOGLE_SAFE_BROWSING_API_KEY: string;
 		IP_SALT: string;
+		TURNSTILE_SECRET_KEY: string;
 		CLOUDFLARE_ACCOUNT_ID: string;
 		CLOUDFLARE_DATABASE_ID: string;
 		CLOUDFLARE_D1_TOKEN: string;
