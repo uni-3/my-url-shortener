@@ -26,6 +26,6 @@ vi.mock("@opennextjs/cloudflare", () => ({
   getCloudflareContext: vi.fn(async () => ({
     env: process.env,
     cf: {},
-    ctx: {},
+    ctx: { waitUntil: vi.fn() },
   })),
 }));
