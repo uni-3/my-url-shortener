@@ -5,7 +5,7 @@ import {
   ConsoleSpanExporter,
 } from "@opentelemetry/sdk-trace-base";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import { Resource } from "@opentelemetry/resources";
+import { resourceFromAttributes } from "@opentelemetry/resources";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 
 export function register() {
@@ -14,7 +14,7 @@ export function register() {
     process.env.NODE_ENV === "development";
 
   const provider = new BasicTracerProvider({
-    resource: new Resource({ [ATTR_SERVICE_NAME]: "my-url-shortener" }),
+    resource: resourceFromAttributes({ [ATTR_SERVICE_NAME]: "my-url-shortener" }),
   });
 
   if (isDev) {
