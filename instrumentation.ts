@@ -7,18 +7,19 @@ import {
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
+import { trace } from "@opentelemetry/api";
 
 export function register() {
   const isDev =
     process.env.ENVIRONMENT === "development" ||
     process.env.NODE_ENV === "development";
 
-  const provider = new BasicTracerProvider({
-    resource: resourceFromAttributes({ [ATTR_SERVICE_NAME]: "my-url-shortener" }),
-  });
-
   if (isDev) {
-    provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
+    const provider = new BasicTracerProvider({
+      resource: resourceFromAttributes({ [ATTR_SERVICE_NAME]: "my-url-shortener" }),
+      spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())],
+    });
+    trace.setGlobalTracerProvider(provider);
   } else {
     if (!process.env.GRAFANA_AUTH_TOKEN) {
       console.warn(
@@ -35,9 +36,13 @@ export function register() {
       },
     });
 
-    provider.addSpanProcessor(new BatchSpanProcessor(exporter));
-    provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
+    const provider = new BasicTracerProvider({
+      resource: resourceFromAttributes({ [ATTR_SERVICE_NAME]: "my-url-shortener" }),
+      spanProcessors: [
+        new BatchSpanProcessor(exporter),
+        new SimpleSpanProcessor(new ConsoleSpanExporter()),
+      ],
+    });
+    trace.setGlobalTracerProvider(provider);
   }
-
-  provider.register();
 }
