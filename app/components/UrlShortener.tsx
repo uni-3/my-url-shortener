@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Turnstile, TurnstileInstance } from "@marsidev/react-turnstile";
 import ThreatAlert from "./ThreatAlert";
 
 interface UrlShortenerProps {
@@ -21,6 +22,8 @@ export default function UrlShortener({ onShorten }: UrlShortenerProps) {
     const [error, setError] = useState("");
     const [threatType, setThreatType] = useState<string | undefined>(undefined);
     const [copied, setCopied] = useState(false);
+    const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+    const turnstileRef = useRef<TurnstileInstance>(null);
 
     const handleShorten = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,7 +36,7 @@ export default function UrlShortener({ onShorten }: UrlShortenerProps) {
             const response = await fetch("/api/shorten", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ url: longUrl }),
+                body: JSON.stringify({ url: longUrl, turnstileToken }),
             });
 
             const data = (await response.json()) as ShortenResponse;
@@ -49,6 +52,8 @@ export default function UrlShortener({ onShorten }: UrlShortenerProps) {
             setError(err instanceof Error ? err.message : "エラーが発生しました");
         } finally {
             setLoading(false);
+            turnstileRef.current?.reset();
+            setTurnstileToken(null);
         }
     };
 
@@ -81,9 +86,17 @@ export default function UrlShortener({ onShorten }: UrlShortenerProps) {
                     />
                 </div>
 
+                <Turnstile
+                    ref={turnstileRef}
+                    siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+                    onSuccess={(token) => setTurnstileToken(token)}
+                    onExpire={() => setTurnstileToken(null)}
+                    onError={() => setTurnstileToken(null)}
+                />
+
                 <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !turnstileToken}
                     className="w-full bg-primary text-primary-foreground font-semibold py-3 rounded-lg hover:opacity-90 disabled:opacity-50 transition-all transform active:scale-[0.98]"
                 >
                     {loading ? (

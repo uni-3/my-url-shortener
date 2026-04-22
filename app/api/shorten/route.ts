@@ -4,6 +4,7 @@ import { encodeId } from "@/lib/utils/sqids";
 import { normalizeUrl } from "@/lib/utils/url";
 import { generateRandomString } from "@/lib/utils/random";
 import { checkUrlSafety } from "@/lib/api/safe-browsing";
+import { verifyTurnstile } from "@/lib/api/turnstile";
 import { getDb, AppEnv } from "@/db";
 import { urls } from "@/db/schema/urls";
 import { eq } from "drizzle-orm";
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
   return tracer.startActiveSpan("shorten-url", async (span) => {
     try {
       await setUserAttributes(span, request);
-      const body = (await request.json()) as { url?: string };
+      const body = (await request.json()) as { url?: string; turnstileToken?: string };
       const result = validateShortenRequest(body);
 
       if (!result.success) {
@@ -33,6 +34,12 @@ export async function POST(request: NextRequest) {
           { error: result.error.errors[0].message },
           { status: 400 }
         );
+      }
+
+      const turnstileResult = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY);
+      if (!turnstileResult.success) {
+        span.setStatus({ code: SpanStatusCode.ERROR, message: "Turnstile verification failed" });
+        return NextResponse.json({ error: "ボット検証に失敗しました" }, { status: 403 });
       }
 
       const { url: originalUrl } = result.data;
