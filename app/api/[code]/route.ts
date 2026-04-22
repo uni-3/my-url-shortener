@@ -4,6 +4,8 @@ import { trace, SpanStatusCode } from "@opentelemetry/api";
 import { setUserAttributes } from "@/lib/utils/telemetry";
 import { scheduleOtelFlush } from "@/lib/utils/otel-flush";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { ensureOtelInitialized } from "@/lib/otel/init";
+import type { AppEnv } from "@/db";
 
 const sqids = new Sqids();
 const tracer = trace.getTracer("url-shortener");
@@ -15,11 +17,15 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ code: string }> }
 ) {
-  const { ctx } = (await getCloudflareContext()) as unknown as { ctx: { waitUntil: (p: Promise<unknown>) => void } };
+  const { env, ctx } = (await getCloudflareContext()) as unknown as {
+    env: AppEnv;
+    ctx: { waitUntil: (p: Promise<unknown>) => void };
+  };
+  ensureOtelInitialized(env);
 
   return tracer.startActiveSpan("api-redirect-url", async (span) => {
     try {
-      await setUserAttributes(span, request);
+      await setUserAttributes(span, request, env);
       const { code } = await params;
 
       // コードをデコード

@@ -1,10 +1,7 @@
-import { trace } from "@opentelemetry/api";
+import { scheduleOtelFlush as scheduleOtelFlushFromProvider } from "@/lib/otel/init";
 
 type WaitUntilContext = { waitUntil: (p: Promise<unknown>) => void };
 
 export function scheduleOtelFlush(ctx: WaitUntilContext): void {
-  const provider = trace.getTracerProvider() as { forceFlush?: () => Promise<void> };
-  if (typeof provider.forceFlush === "function") {
-    ctx.waitUntil(provider.forceFlush());
-  }
+  scheduleOtelFlushFromProvider(ctx);
 }

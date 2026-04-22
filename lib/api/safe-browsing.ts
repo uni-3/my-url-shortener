@@ -2,17 +2,20 @@ import { trace, SpanStatusCode } from "@opentelemetry/api";
 
 const tracer = trace.getTracer("url-shortener");
 
-export async function checkUrlSafety(url: string): Promise<{ safe: boolean; threatType?: string }> {
+export async function checkUrlSafety(
+  url: string,
+  apiKey?: string
+): Promise<{ safe: boolean; threatType?: string }> {
   return tracer.startActiveSpan("check-url-safety", async (span) => {
     try {
-      const apiKey = process.env.GOOGLE_SAFE_BROWSING_API_KEY;
-      if (!apiKey) {
+      const effectiveApiKey = apiKey ?? process.env.GOOGLE_SAFE_BROWSING_API_KEY;
+      if (!effectiveApiKey) {
         console.warn("GOOGLE_SAFE_BROWSING_API_KEY is not set. Skipping safety check.");
         return { safe: true };
       }
 
       // v5alpha1 (v5) endpoint
-      const endpoint = `https://safebrowsing.googleapis.com/v5alpha1/urls:search?key=${apiKey}`;
+      const endpoint = `https://safebrowsing.googleapis.com/v5alpha1/urls:search?key=${effectiveApiKey}`;
 
       const response = await fetch(endpoint, {
         method: "POST",

@@ -10,6 +10,10 @@ export interface AppEnv {
   IP_SALT?: string;
   TURNSTILE_SECRET_KEY?: string;
   ENVIRONMENT?: "development" | "production";
+  LOG_LEVEL?: "debug" | "info";
+  GRAFANA_AUTH_TOKEN?: string;
+  GRAFANA_OTLP_ENDPOINT?: string;
+  OTEL_CONSOLE_EXPORTER?: "1";
 }
 
 /**
