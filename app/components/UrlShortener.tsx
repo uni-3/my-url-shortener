@@ -52,7 +52,6 @@ export default function UrlShortener({ onShorten }: UrlShortenerProps) {
             setError(err instanceof Error ? err.message : "エラーが発生しました");
         } finally {
             setLoading(false);
-            turnstileRef.current?.reset();
             setTurnstileToken(null);
         }
     };
@@ -86,14 +85,6 @@ export default function UrlShortener({ onShorten }: UrlShortenerProps) {
                     />
                 </div>
 
-                <Turnstile
-                    ref={turnstileRef}
-                    siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
-                    onSuccess={(token) => setTurnstileToken(token)}
-                    onExpire={() => setTurnstileToken(null)}
-                    onError={() => setTurnstileToken(null)}
-                />
-
                 <button
                     type="submit"
                     disabled={loading || !turnstileToken}
@@ -109,6 +100,16 @@ export default function UrlShortener({ onShorten }: UrlShortenerProps) {
                         </span>
                     ) : "短縮する"}
                 </button>
+
+                {!turnstileToken && (
+                    <Turnstile
+                        ref={turnstileRef}
+                        siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+                        onSuccess={(token) => setTurnstileToken(token)}
+                        onExpire={() => setTurnstileToken(null)}
+                        onError={() => setTurnstileToken(null)}
+                    />
+                )}
             </form>
 
             {error && (
