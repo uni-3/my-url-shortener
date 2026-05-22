@@ -8,6 +8,13 @@
       "when": 1769238823512,
       "tag": "0000_volatile_edwin_jarvis",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1779444377913,
+      "tag": "0001_smart_fenris",
+      "breakpoints": true
     }
   ]
 }
