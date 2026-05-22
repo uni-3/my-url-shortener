@@ -9,10 +9,10 @@ interface UrlShortenerProps {
 }
 
 interface ShortenResponse {
-    shortCode: string;
-    url?: string;
-    error?: string;
-    threatType?: string;
+    code?: string;
+    short_url?: string;
+    long_url?: string;
+    error?: { message: string; threatType?: string };
 }
 
 export default function UrlShortener({ onShorten }: UrlShortenerProps) {
@@ -42,12 +42,13 @@ export default function UrlShortener({ onShorten }: UrlShortenerProps) {
             const data = (await response.json()) as ShortenResponse;
 
             if (!response.ok) {
-                setThreatType(data.threatType);
-                throw new Error(data.error || "URLの短縮に失敗しました");
+                setThreatType(data.error?.threatType);
+                throw new Error(data.error?.message || "URLの短縮に失敗しました");
             }
 
-            setShortCode(data.shortCode);
-            onShorten(data.shortCode, longUrl);
+            const code = data.code ?? "";
+            setShortCode(code);
+            onShorten(code, longUrl);
         } catch (err) {
             setError(err instanceof Error ? err.message : "エラーが発生しました");
         } finally {
