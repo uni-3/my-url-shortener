@@ -16,7 +16,8 @@
     "db:conn:local": "sqlite3 $(ls .wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite | head -n 1)",
     "db:migrate:production": "wrangler d1 migrations apply url-shortener-production --remote --env production",
     "deploy-next": "next build && wrangler deploy --env production",
-    "deploy": "opennextjs-cloudflare build && wrangler deploy --env production"
+    "deploy": "opennextjs-cloudflare build && wrangler deploy --env production",
+    "shorten": "tsx scripts/shorten.ts"
   },
   "dependencies": {
     "@marsidev/react-turnstile": "^1.5.0",
@@ -50,6 +51,7 @@
     "jsdom": "^27.4.0",
     "postcss": "^8.4.32",
     "tailwindcss": "^4.1.14",
+    "tsx": "^4.22.3",
     "typescript": "^5.3.3",
     "vitest": "^4.0.18",
     "wrangler": "^4.62.0"
