@@ -1,5 +1,5 @@
 import { normalizeUrl } from "@/lib/utils/url";
-import { ShortenError } from "./errors";
+import { CodeCollisionError, ShortenError } from "./errors";
 import type { IdGenerator } from "./id-generator";
 import type { UrlRecord, UrlRepository } from "./repository";
 
@@ -10,10 +10,9 @@ export interface CreateResult {
   isExisting: boolean;
 }
 
-/**
- * URL短縮のコアロジック。HTTP/CLIなどのインターフェースから利用される主役。
- * 依存はコンストラクタで受け取り、メソッド内で new しない。
- */
+const MAX_CODE_ATTEMPTS = 5;
+
+/** URL短縮のコアロジック。依存はコンストラクタDIで受け取り、メソッド内で new しない。 */
 export class ShortenService {
   constructor(
     private readonly repo: UrlRepository,
@@ -36,8 +35,7 @@ export class ShortenService {
       });
     }
 
-    const record = await this.repo.create(url, (id) => this.idGenerator.encode(id));
-    return { record, isExisting: false };
+    return { record: await this.insertWithUniqueCode(url), isExisting: false };
   }
 
   async get(code: string): Promise<UrlRecord | null> {
@@ -46,5 +44,19 @@ export class ShortenService {
 
   async delete(code: string): Promise<boolean> {
     return this.repo.deleteByCode(code);
+  }
+
+  // コードはランダム生成のため極稀に衝突する。別コードで数回まで再試行する。
+  private async insertWithUniqueCode(url: string): Promise<UrlRecord> {
+    let lastError: CodeCollisionError | undefined;
+    for (let attempt = 0; attempt < MAX_CODE_ATTEMPTS; attempt++) {
+      try {
+        return await this.repo.create(url, this.idGenerator.generate());
+      } catch (error) {
+        if (!(error instanceof CodeCollisionError)) throw error;
+        lastError = error;
+      }
+    }
+    throw lastError;
   }
 }

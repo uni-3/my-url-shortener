@@ -11,3 +11,11 @@ export class ShortenError extends Error {
     this.name = "ShortenError";
   }
 }
+
+/** 生成した短縮コードが既存と衝突したことを示す。サービス層が別コードで再試行する。 */
+export class CodeCollisionError extends Error {
+  constructor(public readonly shortCode: string) {
+    super(`Short code already exists: ${shortCode}`);
+    this.name = "CodeCollisionError";
+  }
+}

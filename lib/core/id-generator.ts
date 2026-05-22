@@ -2,10 +2,10 @@ import Sqids from "sqids";
 
 /** 短縮コードの生成戦略。実装を差し替えれば slug 指定などにも対応できる。 */
 export interface IdGenerator {
-  encode(id: number): string;
-  decode(code: string): number | null;
+  generate(): string;
 }
 
+/** 48ビットの乱数を Sqids でエンコードして短縮コードを生成する。 */
 export class SqidsIdGenerator implements IdGenerator {
   private readonly sqids: Sqids;
 
@@ -13,12 +13,12 @@ export class SqidsIdGenerator implements IdGenerator {
     this.sqids = new Sqids({ minLength });
   }
 
-  encode(id: number): string {
-    return this.sqids.encode([id]);
-  }
-
-  decode(code: string): number | null {
-    const numbers = this.sqids.decode(code);
-    return numbers.length > 0 ? numbers[0] : null;
+  generate(): string {
+    const bytes = crypto.getRandomValues(new Uint8Array(6));
+    let value = 0;
+    for (const byte of bytes) {
+      value = value * 256 + byte;
+    }
+    return this.sqids.encode([value]);
   }
 }
