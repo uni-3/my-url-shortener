@@ -29,3 +29,10 @@ vi.mock("@opennextjs/cloudflare", () => ({
     ctx: { waitUntil: vi.fn() },
   })),
 }));
+
+// Mock OTel init to avoid pulling in @opentelemetry/otlp-exporter-base
+// (not installed directly; only a transitive dep of exporter-trace-otlp-http)
+vi.mock("@/lib/otel/init", () => ({
+  ensureOtelInitialized: vi.fn(),
+  scheduleOtelFlush: vi.fn(),
+}));
