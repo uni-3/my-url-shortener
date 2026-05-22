@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "node:crypto";
 import { validateShortenRequest } from "@/lib/validations/url";
 import { encodeId } from "@/lib/utils/sqids";
 import { normalizeUrl } from "@/lib/utils/url";
@@ -19,7 +20,9 @@ function verifyApiKey(request: NextRequest, apiKey: string | undefined): boolean
   if (!apiKey) return false;
   const authHeader = request.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) return false;
-  return authHeader.slice(7) === apiKey;
+  const token = authHeader.slice(7);
+  if (token.length !== apiKey.length) return false;
+  return timingSafeEqual(Buffer.from(token), Buffer.from(apiKey));
 }
 
 export async function POST(request: NextRequest) {
