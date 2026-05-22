@@ -3,16 +3,15 @@
  * URL短縮CLIスクリプト
  *
  * 使い方:
- *   pnpm shorten <URL>                        # ローカルD1
- *   pnpm shorten <URL> --env production       # 本番D1 (--remote)
+ *   pnpm shorten <URL>                   # ローカルD1
+ *   pnpm shorten <URL> --env production  # 本番D1
  *
  * 必須: wrangler がインストールされていること
  */
 
 import { execSync } from "child_process";
-import Sqids from "sqids";
-
-const sqids = new Sqids({ minLength: 6 });
+import { normalizeUrl } from "../lib/utils/url";
+import { encodeId } from "../lib/utils/sqids";
 
 const DB_NAME: Record<string, string> = {
   development: "url-shortener-development",
@@ -39,22 +38,6 @@ function d1(dbName: string, remote: boolean, sql: string) {
   return parsed[0]?.results ?? [];
 }
 
-function normalizeUrl(url: string): string {
-  try {
-    const u = new URL(url);
-    if (u.pathname.endsWith("/index.html")) {
-      u.pathname = u.pathname.slice(0, -10);
-    }
-    const lastSegment = u.pathname.split("/").pop() ?? "";
-    if (!u.pathname.endsWith("/") && !lastSegment.includes(".")) {
-      u.pathname += "/";
-    }
-    return u.href;
-  } catch {
-    return url;
-  }
-}
-
 async function main() {
   const args = process.argv.slice(2);
   const { url, env } = parseArgs(args);
@@ -64,15 +47,10 @@ async function main() {
     process.exit(1);
   }
 
-  let parsed: URL;
   try {
-    parsed = new URL(url);
+    new URL(url);
   } catch {
     console.error("エラー: 有効なURLを入力してください");
-    process.exit(1);
-  }
-  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-    console.error("エラー: https:// または http:// から始まるURLを入力してください");
     process.exit(1);
   }
 
@@ -84,26 +62,26 @@ async function main() {
 
   const remote = env === "production";
   const normalized = normalizeUrl(url);
+  const escaped = normalized.replace(/'/g, "''");
 
   // 既存URLのチェック
   const existing = d1(
     dbName,
     remote,
-    `SELECT id, short_code FROM urls WHERE long_url = '${normalized.replace(/'/g, "''")}' LIMIT 1`
+    `SELECT id, short_code FROM urls WHERE long_url = '${escaped}' LIMIT 1`
   ) as Array<{ id: number; short_code: string }>;
 
   if (existing.length > 0) {
-    const shortUrl = `${BASE_URL[env]}/${existing[0].short_code}`;
-    console.log(shortUrl);
+    console.log(`${BASE_URL[env]}/${existing[0].short_code}`);
     return;
   }
 
-  // 一時コードで挿入してIDを取得
+  // 挿入してIDを取得し、sqidsでエンコード
   const tmpCode = `tmp-${Date.now()}`;
   const inserted = d1(
     dbName,
     remote,
-    `INSERT INTO urls (long_url, short_code) VALUES ('${normalized.replace(/'/g, "''")}', '${tmpCode}') RETURNING id`
+    `INSERT INTO urls (long_url, short_code) VALUES ('${escaped}', '${tmpCode}') RETURNING id`
   ) as Array<{ id: number }>;
 
   if (inserted.length === 0) {
@@ -111,14 +89,10 @@ async function main() {
     process.exit(1);
   }
 
-  const id = inserted[0].id;
-  const shortCode = sqids.encode([id]);
+  const shortCode = encodeId(inserted[0].id);
+  d1(dbName, remote, `UPDATE urls SET short_code = '${shortCode}' WHERE id = ${inserted[0].id}`);
 
-  // 実際の短縮コードで更新
-  d1(dbName, remote, `UPDATE urls SET short_code = '${shortCode}' WHERE id = ${id}`);
-
-  const shortUrl = `${BASE_URL[env]}/${shortCode}`;
-  console.log(shortUrl);
+  console.log(`${BASE_URL[env]}/${shortCode}`);
 }
 
 main().catch((err) => {
