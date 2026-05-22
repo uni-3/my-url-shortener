@@ -47,7 +47,7 @@ describe("Home Page", () => {
     const shortCode = "abcd123";
     vi.mocked(global.fetch).mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ shortCode }),
+      json: () => Promise.resolve({ code: shortCode }),
     } as Response);
 
     render(<Home />);
@@ -68,7 +68,7 @@ describe("Home Page", () => {
     const errorMessage = "API Error Message";
     vi.mocked(global.fetch).mockResolvedValue({
       ok: false,
-      json: () => Promise.resolve({ error: errorMessage }),
+      json: () => Promise.resolve({ error: { code: "INVALID_URL", message: errorMessage } }),
     } as Response);
 
     render(<Home />);
@@ -87,7 +87,7 @@ describe("Home Page", () => {
     const shortCode = "copy123";
     vi.mocked(global.fetch).mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ shortCode }),
+      json: () => Promise.resolve({ code: shortCode }),
     } as Response);
 
     render(<Home />);
@@ -119,7 +119,7 @@ describe("Home Page", () => {
       const shortCode = "hist123";
       vi.mocked(global.fetch).mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ shortCode }),
+        json: () => Promise.resolve({ code: shortCode }),
       } as Response);
 
       render(<Home />);

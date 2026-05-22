@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import type { UrlRecord } from "@/lib/core/repository";
 
-/** API v1 共通のエラーレスポンス { error: { code, message } }。 */
-export function apiError(code: string, message: string, status: number): NextResponse {
-  return NextResponse.json({ error: { code, message } }, { status });
+/** API 共通のエラーレスポンス { error: { code, message, ...extra } }。 */
+export function apiError(
+  code: string,
+  message: string,
+  status: number,
+  extra?: Record<string, unknown>,
+): NextResponse {
+  return NextResponse.json({ error: { code, message, ...extra } }, { status });
 }
 
 /** API v1 共通のリンク表現。 */

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateShortenRequest } from "@/lib/validations/url";
 import { verifyTurnstile } from "@/lib/api/turnstile";
+import { apiError, linkPayload } from "@/lib/api/responses";
 import type { AppEnv } from "@/db";
 import { buildService } from "@/lib/core/build";
 import { ShortenError } from "@/lib/core/errors";
@@ -23,17 +24,15 @@ export async function POST(request: NextRequest) {
       const result = validateShortenRequest(body);
 
       if (!result.success) {
-        span.setStatus({ code: SpanStatusCode.ERROR, message: result.error.errors[0].message });
-        return NextResponse.json(
-          { error: result.error.errors[0].message },
-          { status: 400 }
-        );
+        const message = result.error.errors[0].message;
+        span.setStatus({ code: SpanStatusCode.ERROR, message });
+        return apiError("INVALID_URL", message, 400);
       }
 
       const turnstileResult = await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET_KEY);
       if (!turnstileResult.success) {
         span.setStatus({ code: SpanStatusCode.ERROR, message: "Turnstile verification failed" });
-        return NextResponse.json({ error: "ボット検証に失敗しました" }, { status: 403 });
+        return apiError("TURNSTILE_FAILED", "ボット検証に失敗しました", 403);
       }
 
       const { record, isExisting } = await buildService(env).create(result.data.url);
@@ -44,22 +43,15 @@ export async function POST(request: NextRequest) {
       span.setAttribute("short_code", record.shortCode);
       span.setAttribute("is_existing", isExisting);
       span.setStatus({ code: SpanStatusCode.OK });
-      return NextResponse.json(
-        isExisting
-          ? { shortCode: record.shortCode }
-          : { shortCode: record.shortCode, url: record.longUrl },
-        { status: isExisting ? 200 : 201 }
-      );
+      return NextResponse.json(linkPayload(new URL(request.url).origin, record), {
+        status: isExisting ? 200 : 201,
+      });
     } catch (error) {
       if (error instanceof ShortenError && error.code === "UNSAFE_URL") {
         span.setStatus({ code: SpanStatusCode.ERROR, message: `Unsafe URL: ${error.detail?.threatType}` });
-        return NextResponse.json(
-          {
-            error: "このURLは安全ではない可能性があるため登録できません",
-            threatType: error.detail?.threatType,
-          },
-          { status: 403 }
-        );
+        return apiError("UNSAFE_URL", "このURLは安全ではない可能性があるため登録できません", 403, {
+          threatType: error.detail?.threatType,
+        });
       }
       span.recordException(error as Error);
       span.setStatus({
@@ -67,10 +59,7 @@ export async function POST(request: NextRequest) {
         message: error instanceof Error ? error.message : "Unknown error",
       });
       console.error("URL shortening error:", error);
-      return NextResponse.json(
-        { error: "URLの短縮に失敗しました" },
-        { status: 500 }
-      );
+      return apiError("INTERNAL", "URLの短縮に失敗しました", 500);
     } finally {
       span.end();
       scheduleOtelFlush(ctx);
