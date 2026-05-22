@@ -41,7 +41,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
 
-      const body = (await request.json()) as { url?: string };
+      let body: { url?: string };
+      try {
+        body = (await request.json()) as { url?: string };
+      } catch {
+        span.setStatus({ code: SpanStatusCode.ERROR, message: "Invalid JSON" });
+        return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+      }
       const result = validateShortenRequest(body);
 
       if (!result.success) {
@@ -71,13 +77,15 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const [inserted] = await db
-        .insert(urls)
-        .values({ longUrl: url, shortCode: `tmp-${Date.now()}-${generateRandomString(12)}` })
-        .returning({ id: urls.id });
-
-      const shortCode = encodeId(inserted.id);
-      await db.update(urls).set({ shortCode }).where(eq(urls.id, inserted.id));
+      const shortCode = await db.transaction(async (tx) => {
+        const [inserted] = await tx
+          .insert(urls)
+          .values({ longUrl: url, shortCode: `tmp-${Date.now()}-${generateRandomString(12)}` })
+          .returning({ id: urls.id });
+        const code = encodeId(inserted.id);
+        await tx.update(urls).set({ shortCode: code }).where(eq(urls.id, inserted.id));
+        return code;
+      });
 
       if (KV) await KV.put(shortCode, url, { expirationTtl: 86400 });
 
