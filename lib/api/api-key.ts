@@ -14,7 +14,7 @@ export function verifyApiKey(request: NextRequest, apiKey: string | undefined): 
 /** APIキーから安定した不透明な識別子を作る（生のキーをKVキーに出さないため）。 */
 export async function apiKeyId(apiKey: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(apiKey));
-  return Array.from(new Uint8Array(digest, 0, 8))
+  return Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 }
