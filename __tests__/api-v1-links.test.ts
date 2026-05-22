@@ -23,7 +23,7 @@ const record: UrlRecord = {
 };
 
 interface JsonBody {
-  error?: { code: string; message: string };
+  error?: { code: string; message: string; threatType?: string };
   code?: string;
   short_url?: string;
   long_url?: string;
@@ -109,7 +109,9 @@ describe("POST /api/v1/links", () => {
     );
     const res = await POST(postRequest({ url: "https://malware.test" }));
     expect(res.status).toBe(403);
-    expect((await json(res)).error?.code).toBe("UNSAFE_URL");
+    const data = await json(res);
+    expect(data.error?.code).toBe("UNSAFE_URL");
+    expect(data.error?.threatType).toBe("MALWARE");
   });
 });
 

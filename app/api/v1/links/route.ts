@@ -58,7 +58,9 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       if (error instanceof ShortenError && error.code === "UNSAFE_URL") {
         span.setStatus({ code: SpanStatusCode.ERROR, message: `Unsafe URL: ${error.detail?.threatType}` });
-        return apiError("UNSAFE_URL", "このURLは安全ではない可能性があるため登録できません", 403);
+        return apiError("UNSAFE_URL", "このURLは安全ではない可能性があるため登録できません", 403, {
+          threatType: error.detail?.threatType,
+        });
       }
       span.recordException(error as Error);
       span.setStatus({
