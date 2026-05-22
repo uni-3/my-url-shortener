@@ -1,14 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { ShortenError } from "@/lib/core/errors";
 import type { UrlRecord } from "@/lib/core/repository";
 
-const { mockService } = vi.hoisted(() => ({
+const { mockService, mockEnforceApiRateLimit } = vi.hoisted(() => ({
   mockService: { create: vi.fn(), get: vi.fn(), delete: vi.fn() },
+  mockEnforceApiRateLimit: vi.fn(),
 }));
 
 vi.mock("@/lib/core/build", () => ({
   buildService: () => mockService,
+}));
+
+vi.mock("@/lib/api/rate-limit", () => ({
+  enforceApiRateLimit: mockEnforceApiRateLimit,
 }));
 
 import { POST } from "@/app/api/v1/links/route";
@@ -163,5 +168,19 @@ describe("DELETE /api/v1/links/[code]", () => {
     mockService.delete.mockResolvedValue(true);
     const res = await deleteRequest("abc123");
     expect(res.status).toBe(204);
+  });
+});
+
+describe("rate limiting on /api/v1/links", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env.API_KEY = API_KEY;
+  });
+
+  it("returns the 429 response when the rate limiter rejects the request", async () => {
+    mockEnforceApiRateLimit.mockResolvedValue(new NextResponse(null, { status: 429 }));
+    const res = await POST(postRequest({ url: "https://example.com" }));
+    expect(res.status).toBe(429);
+    expect(mockService.create).not.toHaveBeenCalled();
   });
 });
