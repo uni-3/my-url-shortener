@@ -55,3 +55,52 @@ export async function GET(
     }
   });
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ code: string }> },
+) {
+  const { env, ctx } = (await getCloudflareContext()) as unknown as {
+    env: AppEnv;
+    ctx: { waitUntil: (p: Promise<unknown>) => void };
+  };
+  ensureOtelInitialized(env);
+
+  return tracer.startActiveSpan("api-v1-delete-link", async (span) => {
+    try {
+      await setUserAttributes(span, request, env);
+
+      if (!verifyApiKey(request, env.API_KEY)) {
+        span.setStatus({ code: SpanStatusCode.ERROR, message: "Unauthorized" });
+        return apiError("UNAUTHORIZED", "APIキーが無効です", 401);
+      }
+
+      const { code } = await params;
+      span.setAttribute("short_code", code);
+
+      const deleted = await buildService(env).delete(code);
+      if (!deleted) {
+        span.setStatus({ code: SpanStatusCode.ERROR, message: "Not found" });
+        return apiError("NOT_FOUND", "指定された短縮コードは存在しません", 404);
+      }
+
+      // 削除後もキャッシュが残ると最大1日リダイレクトし続けるため消去する
+      const KV = env.URL_CACHE;
+      if (KV) await KV.delete(code);
+
+      span.setStatus({ code: SpanStatusCode.OK });
+      return new NextResponse(null, { status: 204 });
+    } catch (error) {
+      span.recordException(error as Error);
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+      console.error("API v1 delete link error:", error);
+      return apiError("INTERNAL", "リンクの削除に失敗しました", 500);
+    } finally {
+      span.end();
+      scheduleOtelFlush(ctx);
+    }
+  });
+}

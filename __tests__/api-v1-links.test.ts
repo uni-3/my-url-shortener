@@ -12,7 +12,7 @@ vi.mock("@/lib/core/build", () => ({
 }));
 
 import { POST } from "@/app/api/v1/links/route";
-import { GET } from "@/app/api/v1/links/[code]/route";
+import { DELETE, GET } from "@/app/api/v1/links/[code]/route";
 
 const API_KEY = "test-api-key";
 const record: UrlRecord = {
@@ -49,6 +49,14 @@ function getRequest(code: string, withAuth = true) {
     headers: withAuth ? { Authorization: `Bearer ${API_KEY}` } : {},
   });
   return GET(request, { params: Promise.resolve({ code }) });
+}
+
+function deleteRequest(code: string, withAuth = true) {
+  const request = new NextRequest(`https://sho.rt/api/v1/links/${code}`, {
+    method: "DELETE",
+    headers: withAuth ? { Authorization: `Bearer ${API_KEY}` } : {},
+  });
+  return DELETE(request, { params: Promise.resolve({ code }) });
 }
 
 describe("POST /api/v1/links", () => {
@@ -133,5 +141,30 @@ describe("GET /api/v1/links/[code]", () => {
       short_url: "https://sho.rt/abc123",
       long_url: "https://example.com/",
     });
+  });
+});
+
+describe("DELETE /api/v1/links/[code]", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env.API_KEY = API_KEY;
+  });
+
+  it("returns 401 when the API key is missing", async () => {
+    const res = await deleteRequest("abc123", false);
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 404 NOT_FOUND when the code does not exist", async () => {
+    mockService.delete.mockResolvedValue(false);
+    const res = await deleteRequest("missing");
+    expect(res.status).toBe(404);
+    expect((await json(res)).error?.code).toBe("NOT_FOUND");
+  });
+
+  it("returns 204 when the link is deleted", async () => {
+    mockService.delete.mockResolvedValue(true);
+    const res = await deleteRequest("abc123");
+    expect(res.status).toBe(204);
   });
 });
