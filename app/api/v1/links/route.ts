@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateShortenRequest } from "@/lib/validations/url";
-import { apiKeyId, verifyApiKey } from "@/lib/api/api-key";
-import { enforceRateLimit } from "@/lib/api/rate-limit";
+import { verifyApiKey } from "@/lib/api/api-key";
+import { enforceApiRateLimit } from "@/lib/api/rate-limit";
 import { apiError, linkPayload } from "@/lib/api/responses";
 import type { AppEnv } from "@/db";
 import { buildService } from "@/lib/core/build";
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
         return apiError(401, "APIキーが無効です");
       }
 
-      const rateLimited = await enforceRateLimit(env.URL_CACHE, await apiKeyId(env.API_KEY!));
+      const rateLimited = await enforceApiRateLimit(env);
       if (rateLimited) {
         span.setStatus({ code: SpanStatusCode.ERROR, message: "Rate limited" });
         return rateLimited;

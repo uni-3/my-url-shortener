@@ -1,14 +1,19 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { NextRequest } from "next/server";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { NextRequest, NextResponse } from "next/server";
 import { ShortenError } from "@/lib/core/errors";
 import type { UrlRecord } from "@/lib/core/repository";
 
-const { mockService } = vi.hoisted(() => ({
+const { mockService, mockEnforceApiRateLimit } = vi.hoisted(() => ({
   mockService: { create: vi.fn(), get: vi.fn(), delete: vi.fn() },
+  mockEnforceApiRateLimit: vi.fn(),
 }));
 
 vi.mock("@/lib/core/build", () => ({
   buildService: () => mockService,
+}));
+
+vi.mock("@/lib/api/rate-limit", () => ({
+  enforceApiRateLimit: mockEnforceApiRateLimit,
 }));
 
 import { POST } from "@/app/api/v1/links/route";
@@ -167,32 +172,15 @@ describe("DELETE /api/v1/links/[code]", () => {
 });
 
 describe("rate limiting on /api/v1/links", () => {
-  const originalEnv = process.env;
-
   beforeEach(() => {
     vi.clearAllMocks();
-    mockService.create.mockResolvedValue({ record, isExisting: false });
+    process.env.API_KEY = API_KEY;
   });
 
-  afterEach(() => {
-    process.env = originalEnv;
-  });
-
-  it("returns 429 once the per-key request limit is exceeded", async () => {
-    const store = new Map<string, string>();
-    const kv = {
-      get: async (k: string) => store.get(k) ?? null,
-      put: async (k: string, v: string) => {
-        store.set(k, v);
-      },
-    };
-    process.env = { ...originalEnv, API_KEY };
-    (process.env as Record<string, unknown>).URL_CACHE = kv;
-
-    let lastStatus = 0;
-    for (let i = 0; i < 61; i++) {
-      lastStatus = (await POST(postRequest({ url: "https://example.com" }))).status;
-    }
-    expect(lastStatus).toBe(429);
+  it("returns the 429 response when the rate limiter rejects the request", async () => {
+    mockEnforceApiRateLimit.mockResolvedValue(new NextResponse(null, { status: 429 }));
+    const res = await POST(postRequest({ url: "https://example.com" }));
+    expect(res.status).toBe(429);
+    expect(mockService.create).not.toHaveBeenCalled();
   });
 });

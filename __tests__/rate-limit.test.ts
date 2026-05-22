@@ -1,64 +1,71 @@
-import { describe, it, expect } from "vitest";
-import { checkRateLimit, enforceRateLimit } from "@/lib/api/rate-limit";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { checkRateLimit, enforceRateLimit, type RateLimitStore } from "@/lib/api/rate-limit";
 
-function fakeKV() {
-  const store = new Map<string, string>();
+/** D1RateLimitStore と同じ「同ウィンドウなら+1、変われば1」のセマンティクスを持つインメモリ実装。 */
+function fakeStore(): RateLimitStore {
+  const rows = new Map<string, { count: number; windowStart: number }>();
   return {
-    store,
-    get: async (k: string) => store.get(k) ?? null,
-    put: async (k: string, v: string) => {
-      store.set(k, v);
+    async increment(id, windowStart) {
+      const existing = rows.get(id);
+      const count = existing && existing.windowStart === windowStart ? existing.count + 1 : 1;
+      rows.set(id, { count, windowStart });
+      return count;
     },
-  } as unknown as KVNamespace & { store: Map<string, string> };
+  };
 }
 
 const LIMIT = 60;
 
-describe("checkRateLimit", () => {
-  it("allows the request when no KV namespace is configured (fail-open)", async () => {
-    const result = await checkRateLimit(undefined, "id");
-    expect(result.allowed).toBe(true);
+describe("rate limiter", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-22T00:00:00Z"));
   });
 
-  it("allows requests up to the limit and decrements remaining", async () => {
-    const kv = fakeKV();
-    const first = await checkRateLimit(kv, "id");
-    expect(first.allowed).toBe(true);
-    expect(first.remaining).toBe(LIMIT - 1);
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
-    for (let i = 1; i < LIMIT; i++) {
-      expect((await checkRateLimit(kv, "id")).allowed).toBe(true);
+  it("allows requests up to the limit", async () => {
+    const store = fakeStore();
+    for (let i = 0; i < LIMIT; i++) {
+      expect((await checkRateLimit(store, "id")).allowed).toBe(true);
     }
   });
 
   it("blocks the request once the limit is exceeded", async () => {
-    const kv = fakeKV();
-    for (let i = 0; i < LIMIT; i++) await checkRateLimit(kv, "id");
+    const store = fakeStore();
+    for (let i = 0; i < LIMIT; i++) await checkRateLimit(store, "id");
 
-    const blocked = await checkRateLimit(kv, "id");
-    expect(blocked.allowed).toBe(false);
-    expect(blocked.remaining).toBe(0);
+    expect((await checkRateLimit(store, "id")).allowed).toBe(false);
   });
 
   it("tracks identifiers independently", async () => {
-    const kv = fakeKV();
-    for (let i = 0; i < LIMIT; i++) await checkRateLimit(kv, "a");
+    const store = fakeStore();
+    for (let i = 0; i < LIMIT; i++) await checkRateLimit(store, "a");
 
-    expect((await checkRateLimit(kv, "a")).allowed).toBe(false);
-    expect((await checkRateLimit(kv, "b")).allowed).toBe(true);
-  });
-});
-
-describe("enforceRateLimit", () => {
-  it("returns null when the request is allowed", async () => {
-    expect(await enforceRateLimit(fakeKV(), "id")).toBeNull();
+    expect((await checkRateLimit(store, "a")).allowed).toBe(false);
+    expect((await checkRateLimit(store, "b")).allowed).toBe(true);
   });
 
-  it("returns a 429 response with a Retry-After header when blocked", async () => {
-    const kv = fakeKV();
-    for (let i = 0; i < LIMIT; i++) await checkRateLimit(kv, "id");
+  it("counts a fresh window from one again", async () => {
+    const store = fakeStore();
+    for (let i = 0; i < LIMIT; i++) await checkRateLimit(store, "id");
+    expect((await checkRateLimit(store, "id")).allowed).toBe(false);
 
-    const response = await enforceRateLimit(kv, "id");
+    vi.setSystemTime(new Date("2026-05-22T00:05:00Z"));
+    expect((await checkRateLimit(store, "id")).allowed).toBe(true);
+  });
+
+  it("enforceRateLimit returns null when allowed", async () => {
+    expect(await enforceRateLimit(fakeStore(), "id")).toBeNull();
+  });
+
+  it("enforceRateLimit returns a 429 with Retry-After when blocked", async () => {
+    const store = fakeStore();
+    for (let i = 0; i < LIMIT; i++) await checkRateLimit(store, "id");
+
+    const response = await enforceRateLimit(store, "id");
     expect(response).not.toBeNull();
     expect(response!.status).toBe(429);
     expect(Number(response!.headers.get("Retry-After"))).toBeGreaterThan(0);
