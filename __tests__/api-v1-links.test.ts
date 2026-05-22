@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
 import { ShortenError } from "@/lib/core/errors";
 import type { UrlRecord } from "@/lib/core/repository";
@@ -163,5 +163,36 @@ describe("DELETE /api/v1/links/[code]", () => {
     mockService.delete.mockResolvedValue(true);
     const res = await deleteRequest("abc123");
     expect(res.status).toBe(204);
+  });
+});
+
+describe("rate limiting on /api/v1/links", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockService.create.mockResolvedValue({ record, isExisting: false });
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("returns 429 once the per-key request limit is exceeded", async () => {
+    const store = new Map<string, string>();
+    const kv = {
+      get: async (k: string) => store.get(k) ?? null,
+      put: async (k: string, v: string) => {
+        store.set(k, v);
+      },
+    };
+    process.env = { ...originalEnv, API_KEY };
+    (process.env as Record<string, unknown>).URL_CACHE = kv;
+
+    let lastStatus = 0;
+    for (let i = 0; i < 61; i++) {
+      lastStatus = (await POST(postRequest({ url: "https://example.com" }))).status;
+    }
+    expect(lastStatus).toBe(429);
   });
 });
