@@ -30,18 +30,17 @@ export class D1UrlRepository implements UrlRepository {
     return row ?? null;
   }
 
-  // 短縮コードは行のIDから導出するため、一時コードで挿入してからIDを使って更新する
+  // 短縮コードは行のIDから導出するため、一時コードで挿入してからIDで更新する。
+  // D1 は BEGIN/COMMIT による対話的トランザクションを持たないため個別に実行する。
   async create(longUrl: string, deriveCode: (id: number) => string): Promise<UrlRecord> {
-    return this.db.transaction(async (tx) => {
-      const tmpCode = `tmp-${Date.now()}-${generateRandomString(12)}`;
-      const [inserted] = await tx
-        .insert(urls)
-        .values({ longUrl, shortCode: tmpCode })
-        .returning();
-      const shortCode = deriveCode(inserted.id);
-      await tx.update(urls).set({ shortCode }).where(eq(urls.id, inserted.id));
-      return { id: inserted.id, longUrl: inserted.longUrl, shortCode, createdAt: inserted.createdAt };
-    });
+    const tmpCode = `tmp-${Date.now()}-${generateRandomString(12)}`;
+    const [inserted] = await this.db
+      .insert(urls)
+      .values({ longUrl, shortCode: tmpCode })
+      .returning();
+    const shortCode = deriveCode(inserted.id);
+    await this.db.update(urls).set({ shortCode }).where(eq(urls.id, inserted.id));
+    return { id: inserted.id, longUrl: inserted.longUrl, shortCode, createdAt: inserted.createdAt };
   }
 
   async deleteByCode(code: string): Promise<boolean> {
