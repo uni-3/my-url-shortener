@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { validateShortenRequest } from "@/lib/validations/url";
-import { encodeId } from "@/lib/utils/sqids";
-import { normalizeUrl } from "@/lib/utils/url";
-import { generateRandomString } from "@/lib/utils/random";
-import { checkUrlSafety } from "@/lib/api/safe-browsing";
-import { getDb, AppEnv } from "@/db";
-import { urls } from "@/db/schema/urls";
-import { eq } from "drizzle-orm";
+import type { AppEnv } from "@/db";
+import { buildService } from "@/lib/core/build";
+import { ShortenError } from "@/lib/core/errors";
 import { trace, SpanStatusCode } from "@opentelemetry/api";
 import { setUserAttributes } from "@/lib/utils/telemetry";
 import { scheduleOtelFlush } from "@/lib/utils/otel-flush";
@@ -48,52 +44,35 @@ export async function POST(request: NextRequest) {
         span.setStatus({ code: SpanStatusCode.ERROR, message: "Invalid JSON" });
         return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
       }
-      const result = validateShortenRequest(body);
 
+      const result = validateShortenRequest(body);
       if (!result.success) {
         span.setStatus({ code: SpanStatusCode.ERROR, message: result.error.errors[0].message });
         return NextResponse.json({ error: result.error.errors[0].message }, { status: 400 });
       }
 
-      const url = normalizeUrl(result.data.url);
-      const db = getDb(env);
+      const { record, isExisting } = await buildService(env).create(result.data.url);
+
       const KV = env.URL_CACHE;
+      if (KV) await KV.put(record.shortCode, record.longUrl, { expirationTtl: 86400 });
 
-      const existing = await db.query.urls.findFirst({ where: eq(urls.longUrl, url) });
-      if (existing) {
-        if (KV) await KV.put(existing.shortCode, url, { expirationTtl: 86400 });
-        span.setAttribute("short_code", existing.shortCode);
-        span.setAttribute("is_existing", true);
-        span.setStatus({ code: SpanStatusCode.OK });
-        return NextResponse.json({ shortCode: existing.shortCode }, { status: 200 });
-      }
-
-      const safetyResult = await checkUrlSafety(url, env.GOOGLE_SAFE_BROWSING_API_KEY);
-      if (!safetyResult.safe) {
-        span.setStatus({ code: SpanStatusCode.ERROR, message: `Unsafe URL: ${safetyResult.threatType}` });
+      span.setAttribute("short_code", record.shortCode);
+      span.setAttribute("is_existing", isExisting);
+      span.setStatus({ code: SpanStatusCode.OK });
+      return NextResponse.json(
+        isExisting
+          ? { shortCode: record.shortCode }
+          : { shortCode: record.shortCode, url: record.longUrl },
+        { status: isExisting ? 200 : 201 },
+      );
+    } catch (error) {
+      if (error instanceof ShortenError && error.code === "UNSAFE_URL") {
+        span.setStatus({ code: SpanStatusCode.ERROR, message: `Unsafe URL: ${error.detail?.threatType}` });
         return NextResponse.json(
-          { error: "このURLは安全ではない可能性があるため登録できません", threatType: safetyResult.threatType },
-          { status: 403 }
+          { error: "このURLは安全ではない可能性があるため登録できません", threatType: error.detail?.threatType },
+          { status: 403 },
         );
       }
-
-      const shortCode = await db.transaction(async (tx) => {
-        const [inserted] = await tx
-          .insert(urls)
-          .values({ longUrl: url, shortCode: `tmp-${Date.now()}-${generateRandomString(12)}` })
-          .returning({ id: urls.id });
-        const code = encodeId(inserted.id);
-        await tx.update(urls).set({ shortCode: code }).where(eq(urls.id, inserted.id));
-        return code;
-      });
-
-      if (KV) await KV.put(shortCode, url, { expirationTtl: 86400 });
-
-      span.setAttribute("short_code", shortCode);
-      span.setAttribute("is_existing", false);
-      span.setStatus({ code: SpanStatusCode.OK });
-      return NextResponse.json({ shortCode, url }, { status: 201 });
-    } catch (error) {
       span.recordException(error as Error);
       span.setStatus({
         code: SpanStatusCode.ERROR,
