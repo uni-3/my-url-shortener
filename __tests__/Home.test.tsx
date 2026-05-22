@@ -68,7 +68,7 @@ describe("Home Page", () => {
     const errorMessage = "API Error Message";
     vi.mocked(global.fetch).mockResolvedValue({
       ok: false,
-      json: () => Promise.resolve({ error: { code: "INVALID_URL", message: errorMessage } }),
+      json: () => Promise.resolve({ error: { message: errorMessage } }),
     } as Response);
 
     render(<Home />);

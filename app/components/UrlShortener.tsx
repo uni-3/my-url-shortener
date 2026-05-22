@@ -12,7 +12,7 @@ interface ShortenResponse {
     code?: string;
     short_url?: string;
     long_url?: string;
-    error?: { code: string; message: string; threatType?: string };
+    error?: { message: string; threatType?: string };
 }
 
 export default function UrlShortener({ onShorten }: UrlShortenerProps) {

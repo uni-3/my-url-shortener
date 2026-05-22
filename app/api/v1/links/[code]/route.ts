@@ -27,7 +27,7 @@ export async function GET(
 
       if (!verifyApiKey(request, env.API_KEY)) {
         span.setStatus({ code: SpanStatusCode.ERROR, message: "Unauthorized" });
-        return apiError("UNAUTHORIZED", "APIキーが無効です", 401);
+        return apiError(401, "APIキーが無効です");
       }
 
       const { code } = await params;
@@ -36,7 +36,7 @@ export async function GET(
       const record = await buildService(env).get(code);
       if (!record) {
         span.setStatus({ code: SpanStatusCode.ERROR, message: "Not found" });
-        return apiError("NOT_FOUND", "指定された短縮コードは存在しません", 404);
+        return apiError(404, "指定された短縮コードは存在しません");
       }
 
       span.setStatus({ code: SpanStatusCode.OK });
@@ -48,7 +48,7 @@ export async function GET(
         message: error instanceof Error ? error.message : "Unknown error",
       });
       console.error("API v1 get link error:", error);
-      return apiError("INTERNAL", "リンクの取得に失敗しました", 500);
+      return apiError(500, "リンクの取得に失敗しました");
     } finally {
       span.end();
       scheduleOtelFlush(ctx);
@@ -72,7 +72,7 @@ export async function DELETE(
 
       if (!verifyApiKey(request, env.API_KEY)) {
         span.setStatus({ code: SpanStatusCode.ERROR, message: "Unauthorized" });
-        return apiError("UNAUTHORIZED", "APIキーが無効です", 401);
+        return apiError(401, "APIキーが無効です");
       }
 
       const { code } = await params;
@@ -81,7 +81,7 @@ export async function DELETE(
       const deleted = await buildService(env).delete(code);
       if (!deleted) {
         span.setStatus({ code: SpanStatusCode.ERROR, message: "Not found" });
-        return apiError("NOT_FOUND", "指定された短縮コードは存在しません", 404);
+        return apiError(404, "指定された短縮コードは存在しません");
       }
 
       // 削除後もキャッシュが残ると最大1日リダイレクトし続けるため消去する
@@ -97,7 +97,7 @@ export async function DELETE(
         message: error instanceof Error ? error.message : "Unknown error",
       });
       console.error("API v1 delete link error:", error);
-      return apiError("INTERNAL", "リンクの削除に失敗しました", 500);
+      return apiError(500, "リンクの削除に失敗しました");
     } finally {
       span.end();
       scheduleOtelFlush(ctx);

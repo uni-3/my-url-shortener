@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
       if (!verifyApiKey(request, env.API_KEY)) {
         span.setStatus({ code: SpanStatusCode.ERROR, message: "Unauthorized" });
-        return apiError("UNAUTHORIZED", "APIキーが無効です", 401);
+        return apiError(401, "APIキーが無効です");
       }
 
       let body: { url?: string };
@@ -34,14 +34,14 @@ export async function POST(request: NextRequest) {
         body = (await request.json()) as { url?: string };
       } catch {
         span.setStatus({ code: SpanStatusCode.ERROR, message: "Invalid JSON" });
-        return apiError("INVALID_JSON", "リクエストボディが不正なJSONです", 400);
+        return apiError(400, "リクエストボディが不正なJSONです");
       }
 
       const result = validateShortenRequest(body);
       if (!result.success) {
         const message = result.error.errors[0].message;
         span.setStatus({ code: SpanStatusCode.ERROR, message });
-        return apiError("INVALID_URL", message, 400);
+        return apiError(400, message);
       }
 
       const { record, isExisting } = await buildService(env).create(result.data.url);
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       if (error instanceof ShortenError && error.code === "UNSAFE_URL") {
         span.setStatus({ code: SpanStatusCode.ERROR, message: `Unsafe URL: ${error.detail?.threatType}` });
-        return apiError("UNSAFE_URL", "このURLは安全ではない可能性があるため登録できません", 403, {
+        return apiError(403, "このURLは安全ではない可能性があるため登録できません", {
           threatType: error.detail?.threatType,
         });
       }
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
         message: error instanceof Error ? error.message : "Unknown error",
       });
       console.error("API v1 create link error:", error);
-      return apiError("INTERNAL", "URLの短縮に失敗しました", 500);
+      return apiError(500, "URLの短縮に失敗しました");
     } finally {
       span.end();
       scheduleOtelFlush(ctx);

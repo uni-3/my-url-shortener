@@ -23,7 +23,7 @@ const record: UrlRecord = {
 };
 
 interface JsonBody {
-  error?: { code: string; message: string; threatType?: string };
+  error?: { message: string; threatType?: string };
   code?: string;
   short_url?: string;
   long_url?: string;
@@ -68,21 +68,19 @@ describe("POST /api/v1/links", () => {
   it("returns 401 with a structured error when the API key is missing", async () => {
     const res = await POST(postRequest({ url: "https://example.com" }, false));
     expect(res.status).toBe(401);
-    expect(await json(res)).toEqual({
-      error: { code: "UNAUTHORIZED", message: expect.any(String) },
-    });
+    expect(await json(res)).toEqual({ error: { message: expect.any(String) } });
   });
 
-  it("returns 400 INVALID_JSON for an unparseable body", async () => {
+  it("returns 400 for an unparseable body", async () => {
     const res = await POST(postRequest("{not json"));
     expect(res.status).toBe(400);
-    expect((await json(res)).error?.code).toBe("INVALID_JSON");
+    expect((await json(res)).error?.message).toBeTruthy();
   });
 
-  it("returns 400 INVALID_URL for an invalid URL", async () => {
+  it("returns 400 for an invalid URL", async () => {
     const res = await POST(postRequest({ url: "not-a-url" }));
     expect(res.status).toBe(400);
-    expect((await json(res)).error?.code).toBe("INVALID_URL");
+    expect((await json(res)).error?.message).toBeTruthy();
   });
 
   it("returns 201 with the link payload for a new URL", async () => {
@@ -103,15 +101,13 @@ describe("POST /api/v1/links", () => {
     expect((await json(res)).code).toBe("abc123");
   });
 
-  it("returns 403 UNSAFE_URL when the service rejects the URL", async () => {
+  it("returns 403 with the threat type when the URL is unsafe", async () => {
     mockService.create.mockRejectedValue(
       new ShortenError("UNSAFE_URL", "unsafe", { threatType: "MALWARE" }),
     );
     const res = await POST(postRequest({ url: "https://malware.test" }));
     expect(res.status).toBe(403);
-    const data = await json(res);
-    expect(data.error?.code).toBe("UNSAFE_URL");
-    expect(data.error?.threatType).toBe("MALWARE");
+    expect((await json(res)).error?.threatType).toBe("MALWARE");
   });
 });
 
@@ -124,14 +120,13 @@ describe("GET /api/v1/links/[code]", () => {
   it("returns 401 when the API key is missing", async () => {
     const res = await getRequest("abc123", false);
     expect(res.status).toBe(401);
-    expect((await json(res)).error?.code).toBe("UNAUTHORIZED");
   });
 
-  it("returns 404 NOT_FOUND when the code does not exist", async () => {
+  it("returns 404 when the code does not exist", async () => {
     mockService.get.mockResolvedValue(null);
     const res = await getRequest("missing");
     expect(res.status).toBe(404);
-    expect((await json(res)).error?.code).toBe("NOT_FOUND");
+    expect((await json(res)).error?.message).toBeTruthy();
   });
 
   it("returns 200 with the link payload for an existing code", async () => {
@@ -157,11 +152,11 @@ describe("DELETE /api/v1/links/[code]", () => {
     expect(res.status).toBe(401);
   });
 
-  it("returns 404 NOT_FOUND when the code does not exist", async () => {
+  it("returns 404 when the code does not exist", async () => {
     mockService.delete.mockResolvedValue(false);
     const res = await deleteRequest("missing");
     expect(res.status).toBe(404);
-    expect((await json(res)).error?.code).toBe("NOT_FOUND");
+    expect((await json(res)).error?.message).toBeTruthy();
   });
 
   it("returns 204 when the link is deleted", async () => {
