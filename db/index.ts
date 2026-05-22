@@ -9,6 +9,7 @@ export interface AppEnv {
   GOOGLE_SAFE_BROWSING_API_KEY?: string;
   IP_SALT?: string;
   TURNSTILE_SECRET_KEY?: string;
+  API_KEY?: string;
   ENVIRONMENT?: "development" | "production";
   LOG_LEVEL?: "debug" | "info";
   GRAFANA_AUTH_TOKEN?: string;
