@@ -56,13 +56,8 @@ function buildMcpHandler(env: AppEnv, origin: string) {
           }
           try {
             const { record, isExisting } = await buildService(env).create(result.data.url);
-            // キャッシュ更新の失敗で登録自体（D1には保存済み）を失敗扱いにしない
-            try {
-              const KV = env.URL_CACHE;
-              if (KV) await KV.put(record.shortCode, record.longUrl, { expirationTtl: 86400 });
-            } catch (kvError) {
-              console.error("KV cache write failed:", kvError);
-            }
+            // KVキャッシュは登録時には書かない。リダイレクト側のread-through
+            // (app/[code]/route.ts) が初回アクセス時に充填する。
             return textResult({ ...linkPayload(origin, record), isExisting });
           } catch (error) {
             if (error instanceof ShortenError && error.code === "UNSAFE_URL") {

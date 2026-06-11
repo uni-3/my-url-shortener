@@ -53,9 +53,6 @@ export async function POST(request: NextRequest) {
 
       const { record, isExisting } = await buildService(env).create(result.data.url);
 
-      const KV = env.URL_CACHE;
-      if (KV) await KV.put(record.shortCode, record.longUrl, { expirationTtl: 86400 });
-
       span.setAttribute("short_code", record.shortCode);
       span.setAttribute("is_existing", isExisting);
       span.setStatus({ code: SpanStatusCode.OK });
