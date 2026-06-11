@@ -26,6 +26,7 @@
 - **セキュリティ**: Google Safe Browsing APIによる危険サイトチェック
 - **バリデーション**: ZodによるURL形式チェックと重複登録防止
 - **モニタリング**: OpenTelemetryによる実行時トレースの可視化
+- **MCPサーバー**: `/mcp` エンドポイントでAIエージェントからURL短縮・解決が可能
 
 ## 🛠️ セットアップ
 
@@ -100,6 +101,59 @@ URL登録時の処理順序：
 3. **セキュリティ審査**: Google Safe Browsing APIで危険判定
 4. **DB保存**: 安全なら短縮コードを生成して保存（トランザクション処理）
 5. **キャッシュ更新**: Cloudflare KVに保存
+
+## 🔌 MCPサーバーとして使う
+
+`/mcp` エンドポイントは Streamable HTTP の MCP (Model Context Protocol) サーバーとして動作します。
+認証には API キー（`Authorization: Bearer <API_KEY>`）が必要です。
+
+### 提供ツール
+
+| ツール名 | 引数 | 説明 |
+| --- | --- | --- |
+| `shorten_url` | `url: string` | URLを短縮して短縮URLを返す（登録済みなら既存の短縮URLを返す） |
+| `resolve_url` | `code: string` | 短縮コードから元のURLを取得する |
+
+### Claude Code CLI から接続
+
+```bash
+claude mcp add --transport http url-shortener https://s.uni-3.app/mcp --header "Authorization: Bearer <API_KEY>"
+```
+
+### `.mcp.json` で設定
+
+```json
+{
+  "mcpServers": {
+    "url-shortener": {
+      "type": "http",
+      "url": "https://s.uni-3.app/mcp",
+      "headers": {
+        "Authorization": "Bearer <API_KEY>"
+      }
+    }
+  }
+}
+```
+
+### Claude Desktop から接続 (mcp-remote 経由)
+
+```json
+{
+  "mcpServers": {
+    "url-shortener": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://s.uni-3.app/mcp",
+        "--header",
+        "Authorization: Bearer <API_KEY>"
+      ]
+    }
+  }
+}
+```
 
 ## 📝 開発ガイドライン
 
