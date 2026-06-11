@@ -56,8 +56,13 @@ function buildMcpHandler(env: AppEnv, origin: string) {
           }
           try {
             const { record, isExisting } = await buildService(env).create(result.data.url);
-            const KV = env.URL_CACHE;
-            if (KV) await KV.put(record.shortCode, record.longUrl, { expirationTtl: 86400 });
+            // キャッシュ更新の失敗で登録自体（D1には保存済み）を失敗扱いにしない
+            try {
+              const KV = env.URL_CACHE;
+              if (KV) await KV.put(record.shortCode, record.longUrl, { expirationTtl: 86400 });
+            } catch (kvError) {
+              console.error("KV cache write failed:", kvError);
+            }
             return textResult({ ...linkPayload(origin, record), isExisting });
           } catch (error) {
             if (error instanceof ShortenError && error.code === "UNSAFE_URL") {
@@ -118,7 +123,7 @@ export async function POST(request: NextRequest) {
         return rateLimited;
       }
 
-      const handler = buildMcpHandler(env, new URL(request.url).origin);
+      const handler = buildMcpHandler(env, request.nextUrl.origin);
       const response = await handler(request);
       span.setStatus({ code: SpanStatusCode.OK });
       return response;

@@ -1,7 +1,8 @@
 // @vitest-environment node
 // mcp-handler は node:http / node:net 等のビルトインを使うため、jsdomではなくnode環境で実行する。
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { ShortenError } from "@/lib/core/errors";
 import type { UrlRecord } from "@/lib/core/repository";
 
 const { mockService, mockEnforceApiRateLimit } = vi.hoisted(() => ({
@@ -99,7 +100,6 @@ describe("POST /mcp authentication", () => {
   });
 
   it("returns the 429 response when the rate limiter rejects the request", async () => {
-    const { NextResponse } = await import("next/server");
     mockEnforceApiRateLimit.mockResolvedValue(new NextResponse(null, { status: 429 }));
     const res = await POST(mcpRequest(toolsListBody()));
     expect(res.status).toBe(429);
@@ -144,7 +144,6 @@ describe("POST /mcp tools/call shorten_url", () => {
   });
 
   it("returns an error result with the threat type for an unsafe URL", async () => {
-    const { ShortenError } = await import("@/lib/core/errors");
     mockService.create.mockRejectedValue(
       new ShortenError("UNSAFE_URL", "unsafe", { threatType: "MALWARE" }),
     );
