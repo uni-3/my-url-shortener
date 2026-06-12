@@ -38,9 +38,14 @@ interface LanguageModelCreateOptions {
   signal?: AbortSignal;
 }
 
-/** create() の monitor に届く "downloadprogress" イベント。loaded は 0〜1 の進捗率。 */
+/**
+ * create() の monitor に届く "downloadprogress" イベント。
+ * 現行仕様では loaded は 0〜1 の進捗率（total は廃止済み）だが、
+ * 古い実装ではバイト数 + total が来るため、互換のため optional で持つ。
+ */
 interface LanguageModelDownloadProgressEvent extends Event {
   loaded: number;
+  total?: number;
 }
 
 declare const LanguageModel:

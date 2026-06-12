@@ -76,7 +76,13 @@ export async function enforceIpRateLimit(
   env: AppEnv,
   request: NextRequest,
 ): Promise<NextResponse | null> {
-  const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
+  // 本番(Cloudflare)では CF-Connecting-IP が必ず付く。ローカル等それ以外の環境では
+  // X-Forwarded-For の先頭、どちらもなければ "unknown" にフォールバックする
+  // （Next.js 15 では request.ip が廃止されているためヘッダーのみで判定する）。
+  const ip =
+    request.headers.get("CF-Connecting-IP") ??
+    request.headers.get("X-Forwarded-For")?.split(",")[0]?.trim() ??
+    "unknown";
   const store = new D1RateLimitStore(getDb(env));
   return enforceRateLimit(store, `ip:${await sha256Hex(ip)}`);
 }

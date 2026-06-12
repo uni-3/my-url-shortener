@@ -29,7 +29,10 @@ export async function createMcpClient(): Promise<Client> {
  * メタキー（$schema / additionalProperties）はGemini Nano側で解釈されず
  * エラーの原因になり得るため取り除く（type / properties / required / description は残す）。
  */
-function sanitizeInputSchema(schema: Record<string, unknown>): Record<string, unknown> {
+function sanitizeInputSchema(
+  schema: Record<string, unknown> | null | undefined,
+): Record<string, unknown> {
+  if (!schema) return {};
   const { $schema: _schema, additionalProperties: _additional, ...rest } = schema;
   return rest;
 }

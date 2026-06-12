@@ -33,7 +33,41 @@ const SYSTEM_PROMPT =
   "あなたはURL短縮アシスタントです。" +
   "URLの短縮を頼まれたら、必ず shorten_url ツールを使って短縮してください。" +
   "短縮コードから元のURLを調べるよう頼まれたら、必ず resolve_url ツールを使ってください。" +
-  "簡潔に日本語で答えてください。";
+  "URLを答えるときは、ツールの結果に含まれる short_url や long_url の値をそのまま使い、" +
+  "自分でURLを作ったり変えたりしてはいけません。" +
+  "マークダウン記法（バッククォートや**など）は使わず、プレーンテキストで簡潔に日本語で答えてください。";
+
+/**
+ * アシスタント応答の表示フォールバック。
+ * システムプロンプトでマークダウン禁止を指示しているが、小型モデルは従わないことが
+ * あるため、`...` で囲まれた部分はコード風スパンに整形して生のバッククォートを見せない。
+ */
+function AssistantText({ text }: { text: string }) {
+  const parts = text.split(/`([^`]+)`/g);
+  if (parts.length === 1) return <>{text}</>;
+  return (
+    <>
+      {parts.map((part, index) =>
+        index % 2 === 1 ? (
+          <code
+            key={index}
+            className="font-mono text-[0.9em] bg-muted/60 rounded px-1 break-all"
+          >
+            {part}
+          </code>
+        ) : (
+          part
+        ),
+      )}
+    </>
+  );
+}
+
+/** 破棄済みセッションへの prompt 起因のエラーかどうかを判定する。 */
+function isSessionDestroyedError(error: unknown): boolean {
+  if (error instanceof DOMException && error.name === "InvalidStateError") return true;
+  return error instanceof Error && /destroyed/i.test(error.message);
+}
 
 /** UrlShortener と同じローディングスピナー。 */
 function Spinner() {
@@ -72,6 +106,10 @@ export default function ChatInterface({ onShorten }: ChatInterfaceProps) {
 
   const sessionRef = useRef<LanguageModelSession | null>(null);
   const toolsRef = useRef<LanguageModelTool[] | null>(null);
+  // アンマウント後の setState を防ぐためのガード
+  const isMountedRef = useRef(true);
+  // メッセージ追加時の自動スクロール先アンカー
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // マウント時にPrompt APIの利用可否を判定する
   useEffect(() => {
@@ -102,11 +140,19 @@ export default function ChatInterface({ onShorten }: ChatInterfaceProps) {
 
   // アンマウント時にセッションを破棄する
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
+      isMountedRef.current = false;
       sessionRef.current?.destroy();
       sessionRef.current = null;
     };
   }, []);
+
+  // メッセージ追加・ストリーミング更新時に最下部へ自動スクロールする
+  // （jsdom には scrollIntoView がないため optional call にする）
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView?.({ behavior: "smooth", block: "nearest" });
+  }, [messages, streamingText]);
 
   const handleToolResult = useCallback(
     (event: ToolResultEvent) => {
@@ -144,16 +190,26 @@ export default function ChatInterface({ onShorten }: ChatInterfaceProps) {
       tools: toolsRef.current,
       monitor(m) {
         m.addEventListener("downloadprogress", (event) => {
-          const loaded = (event as LanguageModelDownloadProgressEvent).loaded;
-          setDownloadProgress(Math.round(loaded * 100));
+          const { loaded, total } = event as LanguageModelDownloadProgressEvent;
+          // 現行仕様では loaded は 0〜1 の進捗率。古い実装（バイト数 + total）にも対応する
+          const fraction = total && total > 0 ? loaded / total : loaded;
+          if (isMountedRef.current) {
+            setDownloadProgress(Math.round(Math.min(fraction, 1) * 100));
+          }
         });
       },
     });
+    // create() 中にアンマウントされていたらセッションをリークさせない
+    if (!isMountedRef.current) {
+      session.destroy();
+      throw new Error("チャットが閉じられたため初期化を中断しました");
+    }
     sessionRef.current = session;
     return session;
   }, [handleToolResult]);
 
   const failWithError = (error: unknown) => {
+    if (!isMountedRef.current) return;
     setErrorDetail(error instanceof Error ? error.message : String(error));
     setStatus("error");
   };
@@ -164,7 +220,7 @@ export default function ChatInterface({ onShorten }: ChatInterfaceProps) {
     setStatus("downloading");
     try {
       await ensureSession();
-      setStatus("ready");
+      if (isMountedRef.current) setStatus("ready");
     } catch (error) {
       failWithError(error);
     }
@@ -184,32 +240,54 @@ export default function ChatInterface({ onShorten }: ChatInterfaceProps) {
     } catch (error) {
       // セッション生成に失敗（tools未対応バージョン等）した場合はエラーパネルへ
       failWithError(error);
-      setSending(false);
+      if (isMountedRef.current) setSending(false);
       return;
     }
 
-    try {
-      setStreamingText("");
+    const runStream = async (s: LanguageModelSession): Promise<string> => {
       let accumulated = "";
-      const reader = session.promptStreaming(text).getReader();
+      const reader = s.promptStreaming(text).getReader();
       for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
         accumulated += value;
+        if (!isMountedRef.current) break;
         setStreamingText(accumulated);
       }
-      dispatch({ type: "append", message: { role: "assistant", text: accumulated } });
+      return accumulated;
+    };
+
+    try {
+      setStreamingText("");
+      let accumulated: string;
+      try {
+        accumulated = await runStream(session);
+      } catch (error) {
+        // セッションが破棄されていた場合（dev のホットリロード等）は
+        // 一度だけ作り直して再試行する
+        if (!isSessionDestroyedError(error)) throw error;
+        sessionRef.current = null;
+        session = await ensureSession();
+        accumulated = await runStream(session);
+      }
+      if (isMountedRef.current) {
+        dispatch({ type: "append", message: { role: "assistant", text: accumulated } });
+      }
     } catch (error) {
-      dispatch({
-        type: "append",
-        message: {
-          role: "assistant",
-          text: `エラーが発生しました: ${error instanceof Error ? error.message : String(error)}`,
-        },
-      });
+      if (isMountedRef.current) {
+        dispatch({
+          type: "append",
+          message: {
+            role: "assistant",
+            text: `エラーが発生しました: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        });
+      }
     } finally {
-      setStreamingText(null);
-      setSending(false);
+      if (isMountedRef.current) {
+        setStreamingText(null);
+        setSending(false);
+      }
     }
   };
 
@@ -308,15 +386,20 @@ export default function ChatInterface({ onShorten }: ChatInterfaceProps) {
                       : "mr-auto max-w-[85%] bg-accent/5 border border-border rounded-lg px-3 py-2 text-sm text-foreground whitespace-pre-wrap break-words"
                   }
                 >
-                  {message.text}
+                  {message.role === "user" ? (
+                    message.text
+                  ) : (
+                    <AssistantText text={message.text} />
+                  )}
                 </div>
               ),
             )}
             {streamingText !== null && (
               <div className="mr-auto max-w-[85%] bg-accent/5 border border-border rounded-lg px-3 py-2 text-sm text-foreground whitespace-pre-wrap break-words">
-                {streamingText === "" ? "..." : streamingText}
+                {streamingText === "" ? "..." : <AssistantText text={streamingText} />}
               </div>
             )}
+            <div ref={messagesEndRef} />
           </div>
 
           <form onSubmit={handleSend} className="flex gap-2">
