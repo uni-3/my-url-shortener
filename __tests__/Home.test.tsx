@@ -114,6 +114,29 @@ describe("Home Page", () => {
     }, { timeout: 2000 });
   });
 
+  describe("Tab switching", () => {
+    it("shows the form tab by default", () => {
+      render(<Home />);
+      expect(screen.getByRole("tab", { name: "フォーム" }).getAttribute("aria-selected")).toBe("true");
+      expect(screen.getByRole("tab", { name: "チャット" }).getAttribute("aria-selected")).toBe("false");
+      expect(screen.getByText("URL短縮サービス")).toBeDefined();
+    });
+
+    it("switches to the chat tab and shows the chat panel", async () => {
+      render(<Home />);
+
+      fireEvent.click(screen.getByRole("tab", { name: "チャット" }));
+
+      expect(screen.getByRole("tab", { name: "チャット" }).getAttribute("aria-selected")).toBe("true");
+      // チャットパネルが表示される（jsdomにはLanguageModelがないため未対応の案内になる）
+      expect(await screen.findByText("チャットで短縮")).toBeDefined();
+      expect(screen.getByText("chrome://flags/#prompt-api-for-gemini-nano")).toBeDefined();
+      // フォームパネルはhiddenで保持される
+      expect(document.getElementById("panel-form")?.hidden).toBe(true);
+      expect(document.getElementById("panel-chat")?.hidden).toBe(false);
+    });
+  });
+
   describe("History Feature", () => {
     it("saves URL to history after successful shortening", async () => {
       const shortCode = "hist123";
