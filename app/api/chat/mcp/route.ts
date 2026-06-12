@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyApiKey } from "@/lib/api/api-key";
-import { enforceApiRateLimit } from "@/lib/api/rate-limit";
+import { enforceIpRateLimit } from "@/lib/api/rate-limit";
 import { apiError } from "@/lib/api/responses";
 import type { AppEnv } from "@/db";
 import { buildMcpHandler } from "@/lib/mcp/handler";
@@ -12,6 +11,11 @@ import { ensureOtelInitialized } from "@/lib/otel/init";
 
 const tracer = trace.getTracer("url-shortener");
 
+/**
+ * チャットUI（ブラウザのPrompt API）向けの認証なしMCPプロキシ。
+ * APIキーの代わりに、クライアントIP単位のレート制限で濫用を防ぐ。
+ * MCPハンドラ本体は /mcp と共通（lib/mcp/handler.ts）。
+ */
 export async function POST(request: NextRequest) {
   const { env, ctx } = (await getCloudflareContext()) as unknown as {
     env: AppEnv;
@@ -19,22 +23,17 @@ export async function POST(request: NextRequest) {
   };
   ensureOtelInitialized(env);
 
-  return tracer.startActiveSpan("mcp-request", async (span) => {
+  return tracer.startActiveSpan("chat-mcp-request", async (span) => {
     try {
       await setUserAttributes(span, request, env);
 
-      if (!verifyApiKey(request, env.API_KEY)) {
-        span.setStatus({ code: SpanStatusCode.ERROR, message: "Unauthorized" });
-        return apiError(401, "APIキーが無効です");
-      }
-
-      const rateLimited = await enforceApiRateLimit(env);
+      const rateLimited = await enforceIpRateLimit(env, request);
       if (rateLimited) {
         span.setStatus({ code: SpanStatusCode.ERROR, message: "Rate limited" });
         return rateLimited;
       }
 
-      const handler = buildMcpHandler(env, request.nextUrl.origin);
+      const handler = buildMcpHandler(env, request.nextUrl.origin, "/api/chat");
       const response = await handler(request);
       span.setStatus({ code: SpanStatusCode.OK });
       return response;
@@ -44,7 +43,7 @@ export async function POST(request: NextRequest) {
         code: SpanStatusCode.ERROR,
         message: error instanceof Error ? error.message : "Unknown error",
       });
-      console.error("MCP request error:", error);
+      console.error("Chat MCP request error:", error);
       return apiError(500, "MCPリクエストの処理に失敗しました");
     } finally {
       span.end();

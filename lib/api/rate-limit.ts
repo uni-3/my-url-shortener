@@ -1,8 +1,8 @@
 import { sql } from "drizzle-orm";
-import type { NextResponse } from "next/server";
+import type { NextRequest, NextResponse } from "next/server";
 import { getDb, type AppEnv, type DbClient } from "@/db";
 import { rateLimits } from "@/db/schema/rate-limits";
-import { apiKeyId } from "./api-key";
+import { apiKeyId, sha256Hex } from "./api-key";
 import { apiError } from "./responses";
 
 const WINDOW_SECONDS = 60;
@@ -66,4 +66,23 @@ export async function enforceRateLimit(
 export async function enforceApiRateLimit(env: AppEnv): Promise<NextResponse | null> {
   const store = new D1RateLimitStore(getDb(env));
   return enforceRateLimit(store, await apiKeyId(env.API_KEY!));
+}
+
+/**
+ * 認証なしエンドポイント用: クライアントIP単位でレート制限を判定し、超過なら 429 を返す。
+ * 生のIPをD1に保存しないよう、APIキーと同じ方式（SHA-256）でハッシュ化して識別子にする。
+ */
+export async function enforceIpRateLimit(
+  env: AppEnv,
+  request: NextRequest,
+): Promise<NextResponse | null> {
+  // 本番(Cloudflare)では CF-Connecting-IP が必ず付く。ローカル等それ以外の環境では
+  // X-Forwarded-For の先頭、どちらもなければ "unknown" にフォールバックする
+  // （Next.js 15 では request.ip が廃止されているためヘッダーのみで判定する）。
+  const ip =
+    request.headers.get("CF-Connecting-IP") ??
+    request.headers.get("X-Forwarded-For")?.split(",")[0]?.trim() ??
+    "unknown";
+  const store = new D1RateLimitStore(getDb(env));
+  return enforceRateLimit(store, `ip:${await sha256Hex(ip)}`);
 }
