@@ -305,26 +305,8 @@ export default function ChatInterface({ onShorten }: ChatInterfaceProps) {
       )}
 
       {status === "unsupported" && (
-        <div className="p-4 bg-accent/5 border border-border rounded-lg text-sm text-foreground/80 space-y-3">
-          <p className="font-semibold text-foreground">
-            このブラウザではオンデバイスAI (Prompt API) を利用できません。
-          </p>
-          <p>最新のデスクトップ版Chromeで、以下の手順で有効化できます：</p>
-          <ol className="list-decimal list-inside space-y-1 text-xs text-muted-foreground">
-            <li>
-              <code className="font-mono">chrome://flags/#prompt-api-for-gemini-nano</code> を
-              「Enabled」に設定します
-            </li>
-            <li>
-              <code className="font-mono">chrome://flags/#optimization-guide-on-device-model</code>{" "}
-              を「Enabled BypassPerfRequirement」に設定します
-            </li>
-            <li>Chromeを再起動します</li>
-            <li>
-              <code className="font-mono">chrome://components</code> で「Optimization Guide On
-              Device Model」を更新します
-            </li>
-          </ol>
+        <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+          このブラウザではオンデバイスAI (Prompt API) を利用できません。
         </div>
       )}
 

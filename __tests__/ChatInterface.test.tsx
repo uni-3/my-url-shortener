@@ -35,15 +35,12 @@ afterEach(() => {
 });
 
 describe("ChatInterface without the Prompt API", () => {
-  it("shows the fallback panel with setup instructions", async () => {
+  it("shows an error message", async () => {
     render(<ChatInterface onShorten={vi.fn()} />);
 
     expect(
       screen.getByText("このブラウザではオンデバイスAI (Prompt API) を利用できません。"),
     ).toBeDefined();
-    expect(screen.getByText("chrome://flags/#prompt-api-for-gemini-nano")).toBeDefined();
-    expect(screen.getByText("chrome://flags/#optimization-guide-on-device-model")).toBeDefined();
-    expect(screen.getByText("chrome://components")).toBeDefined();
   });
 });
 
