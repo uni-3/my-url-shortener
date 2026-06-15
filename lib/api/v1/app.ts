@@ -227,7 +227,7 @@ const deleteLinkRoute = createRoute({
   path: "/api/v1/links/{code}",
   operationId: "deleteLink",
   summary: "短縮 URL を削除する",
-  description: "短縮コードに対応する URL を削除します。KV キャッシュも同時にクリアされます。",
+  description: "短縮コードに対応する URL を削除します。削除後は対象のリダイレクトも無効になります。",
   tags: ["Links"],
   security: [{ bearerAuth: [] }],
   request: { params: CodeParam },
@@ -263,8 +263,7 @@ v1App.openAPIRegistry.registerPath({
   path: "/{code}",
   operationId: "redirect",
   summary: "短縮 URL へリダイレクト",
-  description:
-    "短縮コードに対応する元の URL へ `302` リダイレクトします。認証不要。Cloudflare KV でキャッシュされます。",
+  description: "短縮コードに対応する元の URL へ `302` リダイレクトします。認証不要。",
   tags: ["Redirect"],
   security: [],
   request: { params: CodeParam },
