@@ -227,7 +227,7 @@ const deleteLinkRoute = createRoute({
   path: "/api/v1/links/{code}",
   operationId: "deleteLink",
   summary: "短縮 URL を削除する",
-  description: "短縮コードに対応する URL を削除します。削除後は対象のリダイレクトも無効になります。",
+  description: "短縮コードに対応する URL を削除します。",
   tags: ["Links"],
   security: [{ bearerAuth: [] }],
   request: { params: CodeParam },
