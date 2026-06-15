@@ -20,6 +20,7 @@
     "shorten": "tsx scripts/shorten.ts"
   },
   "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^8.5.0",
     "@marsidev/react-turnstile": "^1.5.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@opennextjs/cloudflare": "^1.16.2",

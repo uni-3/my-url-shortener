@@ -13,7 +13,7 @@ export async function GET() {
 <body>
   <script
     id="api-reference"
-    data-url="/openapi.yaml"
+    data-url="/api/openapi.json"
     data-configuration='{"theme":"default"}'
   ></script>
   <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
