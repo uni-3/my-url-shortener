@@ -1,4 +1,3 @@
-import { NextRequest } from "next/server";
 import { Span } from "@opentelemetry/api";
 
 type TelemetryEnv = {
@@ -30,7 +29,7 @@ async function sha256(message: string): Promise<string> {
  */
 export async function setUserAttributes(
   span: Span,
-  request: NextRequest,
+  request: Request,
   env?: TelemetryEnv
 ) {
   const ip =

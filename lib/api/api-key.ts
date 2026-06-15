@@ -1,8 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
-import type { NextRequest } from "next/server";
 
-/** Authorization: Bearer <API_KEY> ヘッダを検証する。 */
-export function verifyApiKey(request: NextRequest, apiKey: string | undefined): boolean {
+/** Authorization: Bearer <API_KEY> ヘッダを検証する。NextRequest / 標準 Request の両方を受ける。 */
+export function verifyApiKey(request: Request, apiKey: string | undefined): boolean {
   if (!apiKey) return false;
   const authHeader = request.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) return false;
