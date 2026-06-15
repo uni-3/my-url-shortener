@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { ShortenError } from "@/lib/core/errors";
 import type { UrlRecord } from "@/lib/core/repository";
 
@@ -16,8 +16,7 @@ vi.mock("@/lib/api/rate-limit", () => ({
   enforceApiRateLimit: mockEnforceApiRateLimit,
 }));
 
-import { POST } from "@/app/api/v1/links/route";
-import { DELETE, GET } from "@/app/api/v1/links/[code]/route";
+import { v1App } from "@/lib/api/v1/app";
 
 const API_KEY = "test-api-key";
 const record: UrlRecord = {
@@ -38,30 +37,29 @@ async function json(res: Response): Promise<JsonBody> {
   return res.json() as Promise<JsonBody>;
 }
 
-function postRequest(body: unknown, withAuth = true) {
-  return new NextRequest("https://sho.rt/api/v1/links", {
+function authHeaders(withAuth: boolean): Record<string, string> {
+  return withAuth ? { Authorization: `Bearer ${API_KEY}` } : {};
+}
+
+function post(body: unknown, withAuth = true) {
+  return v1App.request("https://sho.rt/api/v1/links", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(withAuth ? { Authorization: `Bearer ${API_KEY}` } : {}),
-    },
+    headers: { "Content-Type": "application/json", ...authHeaders(withAuth) },
     body: typeof body === "string" ? body : JSON.stringify(body),
   });
 }
 
-function getRequest(code: string, withAuth = true) {
-  const request = new NextRequest(`https://sho.rt/api/v1/links/${code}`, {
-    headers: withAuth ? { Authorization: `Bearer ${API_KEY}` } : {},
+function get(code: string, withAuth = true) {
+  return v1App.request(`https://sho.rt/api/v1/links/${code}`, {
+    headers: authHeaders(withAuth),
   });
-  return GET(request, { params: Promise.resolve({ code }) });
 }
 
-function deleteRequest(code: string, withAuth = true) {
-  const request = new NextRequest(`https://sho.rt/api/v1/links/${code}`, {
+function del(code: string, withAuth = true) {
+  return v1App.request(`https://sho.rt/api/v1/links/${code}`, {
     method: "DELETE",
-    headers: withAuth ? { Authorization: `Bearer ${API_KEY}` } : {},
+    headers: authHeaders(withAuth),
   });
-  return DELETE(request, { params: Promise.resolve({ code }) });
 }
 
 describe("POST /api/v1/links", () => {
@@ -71,26 +69,26 @@ describe("POST /api/v1/links", () => {
   });
 
   it("returns 401 with a structured error when the API key is missing", async () => {
-    const res = await POST(postRequest({ url: "https://example.com" }, false));
+    const res = await post({ url: "https://example.com" }, false);
     expect(res.status).toBe(401);
     expect(await json(res)).toEqual({ error: { message: expect.any(String) } });
   });
 
   it("returns 400 for an unparseable body", async () => {
-    const res = await POST(postRequest("{not json"));
+    const res = await post("{not json");
     expect(res.status).toBe(400);
     expect((await json(res)).error?.message).toBeTruthy();
   });
 
   it("returns 400 for an invalid URL", async () => {
-    const res = await POST(postRequest({ url: "not-a-url" }));
+    const res = await post({ url: "not-a-url" });
     expect(res.status).toBe(400);
     expect((await json(res)).error?.message).toBeTruthy();
   });
 
   it("returns 201 with the link payload for a new URL", async () => {
     mockService.create.mockResolvedValue({ record, isExisting: false });
-    const res = await POST(postRequest({ url: "https://example.com" }));
+    const res = await post({ url: "https://example.com" });
     expect(res.status).toBe(201);
     expect(await json(res)).toEqual({
       code: "abc123",
@@ -101,7 +99,7 @@ describe("POST /api/v1/links", () => {
 
   it("returns 200 when the URL already exists", async () => {
     mockService.create.mockResolvedValue({ record, isExisting: true });
-    const res = await POST(postRequest({ url: "https://example.com" }));
+    const res = await post({ url: "https://example.com" });
     expect(res.status).toBe(200);
     expect((await json(res)).code).toBe("abc123");
   });
@@ -110,7 +108,7 @@ describe("POST /api/v1/links", () => {
     mockService.create.mockRejectedValue(
       new ShortenError("UNSAFE_URL", "unsafe", { threatType: "MALWARE" }),
     );
-    const res = await POST(postRequest({ url: "https://malware.test" }));
+    const res = await post({ url: "https://malware.test" });
     expect(res.status).toBe(403);
     expect((await json(res)).error?.threatType).toBe("MALWARE");
   });
@@ -123,20 +121,20 @@ describe("GET /api/v1/links/[code]", () => {
   });
 
   it("returns 401 when the API key is missing", async () => {
-    const res = await getRequest("abc123", false);
+    const res = await get("abc123", false);
     expect(res.status).toBe(401);
   });
 
   it("returns 404 when the code does not exist", async () => {
     mockService.get.mockResolvedValue(null);
-    const res = await getRequest("missing");
+    const res = await get("missing");
     expect(res.status).toBe(404);
     expect((await json(res)).error?.message).toBeTruthy();
   });
 
   it("returns 200 with the link payload for an existing code", async () => {
     mockService.get.mockResolvedValue(record);
-    const res = await getRequest("abc123");
+    const res = await get("abc123");
     expect(res.status).toBe(200);
     expect(await json(res)).toEqual({
       code: "abc123",
@@ -153,20 +151,20 @@ describe("DELETE /api/v1/links/[code]", () => {
   });
 
   it("returns 401 when the API key is missing", async () => {
-    const res = await deleteRequest("abc123", false);
+    const res = await del("abc123", false);
     expect(res.status).toBe(401);
   });
 
   it("returns 404 when the code does not exist", async () => {
     mockService.delete.mockResolvedValue(false);
-    const res = await deleteRequest("missing");
+    const res = await del("missing");
     expect(res.status).toBe(404);
     expect((await json(res)).error?.message).toBeTruthy();
   });
 
   it("returns 204 when the link is deleted", async () => {
     mockService.delete.mockResolvedValue(true);
-    const res = await deleteRequest("abc123");
+    const res = await del("abc123");
     expect(res.status).toBe(204);
   });
 });
@@ -179,7 +177,7 @@ describe("rate limiting on /api/v1/links", () => {
 
   it("returns the 429 response when the rate limiter rejects the request", async () => {
     mockEnforceApiRateLimit.mockResolvedValue(new NextResponse(null, { status: 429 }));
-    const res = await POST(postRequest({ url: "https://example.com" }));
+    const res = await post({ url: "https://example.com" });
     expect(res.status).toBe(429);
     expect(mockService.create).not.toHaveBeenCalled();
   });

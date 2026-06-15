@@ -155,6 +155,15 @@ claude mcp add --transport http url-shortener https://s.uni-3.app/mcp --header "
 }
 ```
 
+## 📖 API ドキュメント
+
+REST API のドキュメントを公開しています。
+
+- **対話型ドキュメント**: `/docs`（[Scalar](https://github.com/scalar/scalar) で表示。ブラウザから「Try it out」も可能）
+- **OpenAPI 仕様 (3.1)**: `/api/openapi.json`
+
+仕様は `lib/api/v1/app.ts` の [`@hono/zod-openapi`](https://github.com/honojs/middleware/tree/main/packages/zod-openapi) のルート定義から自動生成されます。ルート定義・バリデーション・OpenAPI スキーマが同一の Zod 定義を共有するため、実装とドキュメントがズレません。エンドポイント一覧は `/docs` を参照してください（README に転記すると二重管理になりズレるため、ここには載せません）。
+
 ## 📝 開発ガイドライン
 
 ### データベース操作
