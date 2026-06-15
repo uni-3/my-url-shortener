@@ -16,7 +16,7 @@ export async function GET() {
     data-url="/api/openapi.json"
     data-configuration='{"theme":"default"}'
   ></script>
-  <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1"></script>
 </body>
 </html>`;
 

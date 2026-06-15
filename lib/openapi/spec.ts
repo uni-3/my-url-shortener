@@ -182,8 +182,11 @@ registry.registerPath({
 
 // ---- Generator ----
 
+let cachedSpec: ReturnType<OpenApiGeneratorV31["generateDocument"]> | null = null;
+
 export function generateOpenApiSpec() {
-  return new OpenApiGeneratorV31(registry.definitions).generateDocument({
+  if (cachedSpec) return cachedSpec;
+  cachedSpec = new OpenApiGeneratorV31(registry.definitions).generateDocument({
     openapi: "3.1.0",
     info: {
       title: "URL短縮サービス API",
@@ -205,7 +208,11 @@ export function generateOpenApiSpec() {
       version: "1.0.0",
       license: { name: "MIT" },
     },
-    servers: [{ url: "https://s.uni-3.app", description: "本番環境" }],
+    servers: [
+      { url: "/", description: "現在の環境（相対パス）" },
+      { url: "https://s.uni-3.app", description: "本番環境" },
+    ],
     security: [{ bearerAuth: [] }],
   });
+  return cachedSpec;
 }
