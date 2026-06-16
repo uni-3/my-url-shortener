@@ -1,5 +1,8 @@
 import { drizzle } from "drizzle-orm/d1";
-import * as schema from "./schema/urls";
+import * as urlsSchema from "./schema/urls";
+import * as chatLogsSchema from "./schema/chat-logs";
+
+const schema = { ...urlsSchema, ...chatLogsSchema };
 
 export type DbClient = ReturnType<typeof drizzle<typeof schema>>;
 

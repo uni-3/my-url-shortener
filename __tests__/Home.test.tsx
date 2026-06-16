@@ -2,6 +2,20 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import Home from "@/app/page";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 
+// チャットパネルは常時マウントされる。agents SDK のフックは WebSocket(DurableObject) に
+// 接続するためモックする。
+vi.mock("agents/react", () => ({
+  useAgent: vi.fn(() => ({ agent: "url-chat-agent", name: "test-session" })),
+}));
+vi.mock("agents/ai-react", () => ({
+  useAgentChat: vi.fn(() => ({
+    messages: [],
+    sendMessage: vi.fn(),
+    status: "ready",
+    error: undefined,
+  })),
+}));
+
 describe("Home Page", () => {
   let localStorageMock: Record<string, string>;
 
@@ -128,9 +142,11 @@ describe("Home Page", () => {
       fireEvent.click(screen.getByRole("tab", { name: "チャット" }));
 
       expect(screen.getByRole("tab", { name: "チャット" }).getAttribute("aria-selected")).toBe("true");
-      // チャットパネルが表示される（jsdomにはLanguageModelがないため未対応の案内になる）
+      // チャットパネル（agents SDK 版）が表示される
       expect(await screen.findByText("チャットで短縮")).toBeDefined();
-      expect(screen.getByText("chrome://flags/#prompt-api-for-gemini-nano")).toBeDefined();
+      expect(
+        screen.getByText("例:「https://example.com を短縮して」と話しかけてください。"),
+      ).toBeDefined();
       // フォームパネルはhiddenで保持される
       expect(document.getElementById("panel-form")?.hidden).toBe(true);
       expect(document.getElementById("panel-chat")?.hidden).toBe(false);

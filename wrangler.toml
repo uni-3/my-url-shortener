@@ -1,5 +1,5 @@
 name = "my-url-shortener"
-main = ".open-next/worker.js"
+main = "worker.ts"
 compatibility_date = "2026-02-03" # Updated to match OpenNext
 compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 preview_urls = true
@@ -53,14 +53,21 @@ service = "my-url-shortener"
 binding = "IMAGES"
 
 # Environment variables
+# 注意: GOOGLE_GENERATIVE_AI_API_KEY は secret。`wrangler secret put GOOGLE_GENERATIVE_AI_API_KEY`
+# （ローカルは `.dev.vars`）で設定する。vars には置かない。
+[vars]
+SHORTENER_BASE_URL = "http://localhost:8788"
+
 [env.development.vars]
 ENVIRONMENT = "development"
 LOG_LEVEL = "debug"
+SHORTENER_BASE_URL = "https://dev-s.uni-3.app"
 
 [env.production.vars]
 ENVIRONMENT = "production"
 LOG_LEVEL = "info"
 GRAFANA_OTLP_ENDPOINT = "https://otlp-gateway-prod-ap-northeast-0.grafana.net/otlp/v1/traces"
+SHORTENER_BASE_URL = "https://s.uni-3.app"
 
 # D1 Database binding
 [[d1_databases]]
@@ -73,6 +80,19 @@ migrations_dir = "migrations"
 [[kv_namespaces]]
 binding = "URL_CACHE"
 id = "your-development-kv-namespace-id"
+
+# Durable Object: チャット用 Agent (Cloudflare agents SDK / AIChatAgent)。
+# binding 名 "UrlChatAgent" は routeAgentRequest により kebab-case の
+# agent 名 "url-chat-agent" に対応する（フロントの useAgent と一致させる）。
+# named environment (development/production) はトップレベルの durable_objects /
+# migrations を継承する（既存の d1/kv と同じ継承挙動）。
+[[durable_objects.bindings]]
+name = "UrlChatAgent"
+class_name = "UrlChatAgent"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["UrlChatAgent"]
 
 [[env.production.d1_databases]]
 binding = "DB"
