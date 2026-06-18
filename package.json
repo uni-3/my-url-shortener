@@ -20,6 +20,9 @@
     "shorten": "tsx scripts/shorten.ts"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.82",
+    "@ai-sdk/react": "^3.0.208",
+    "@cloudflare/ai-chat": "^0.8.5",
     "@hono/zod-openapi": "^0.19.10",
     "@marsidev/react-turnstile": "^1.5.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
@@ -31,6 +34,8 @@
     "@opentelemetry/resources": "^2.5.0",
     "@opentelemetry/sdk-trace-base": "^2.5.0",
     "@opentelemetry/semantic-conventions": "^1.39.0",
+    "agents": "^0.16.0",
+    "ai": "^6.0.206",
     "drizzle-orm": "^0.45.1",
     "hono": "^4.12.25",
     "mcp-handler": "^1.1.0",
