@@ -17,7 +17,7 @@
     "db:migrate:production": "wrangler d1 migrations apply url-shortener-production --remote --env production",
     "deploy-next": "next build && wrangler deploy --env production",
     "deploy": "opennextjs-cloudflare build && wrangler deploy --env production",
-    "shorten": "tsx scripts/shorten.ts"
+    "cli": "tsx cli/index.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.82",
